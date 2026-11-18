@@ -1,0 +1,44 @@
+{
+  "format": "tally-ledger",
+  "version": 1,
+  "settings": {
+    "currency": "EUR"
+  },
+  "transactions": [
+    {
+      "id": "t1",
+      "date": "2026-02-28",
+      "payee": "Landlord",
+      "amount": -95000,
+      "categoryId": "c2",
+      "note": "February rent"
+    },
+    {
+      "id": "t3",
+      "date": "2026-03-01",
+      "payee": "Employer Ltd",
+      "amount": 312050,
+      "categoryId": null,
+      "note": ""
+    },
+    {
+      "id": "t4",
+      "date": "2026-03-01",
+      "payee": "Café Ünïcode «Zürich»",
+      "amount": -455,
+      "categoryId": "c5",
+      "note": "line one, \"quoted\"; semicolon"
+    }
+  ],
+  "categories": [
+    {
+      "id": "c2",
+      "name": "Housing"
+    },
+    {
+      "id": "c5",
+      "name": "Eating out"
+    }
+  ],
+  "nextId": 6
+}

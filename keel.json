@@ -14,8 +14,8 @@
   "commands": {
     "lint": "npm run typecheck",
     "unit": "npm run test:unit",
-    "contracts": "npm run test:unit",
-    "integration": null,
+    "contracts": "npm run test:contract",
+    "integration": "npm run test:integration",
     "ui": "npm run test:ui",
     "e2e": "npm run test:e2e",
     "build": "npm run build",
@@ -26,6 +26,7 @@
     "ui": "src/",
     "native": "electron/",
     "contracts": "contracts/",
-    "e2e": "tests/e2e/"
+    "e2e": "tests/e2e/",
+    "domain": "core/"
   }
 }

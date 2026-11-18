@@ -14,6 +14,7 @@ import type {
   Transaction,
 } from "../contracts/ledger.ts";
 import { CURRENCIES } from "../contracts/ledger.ts";
+import { categoryFor, checkCategoryName, checkRuleText } from "./categories.ts";
 import { DELIMITERS } from "./csv.ts";
 import { inspect, MAX_IMPORT_CHARS, mappingProblem, readAll, widthOf } from "./importer.ts";
 import { emptyLedger, type LedgerData } from "./schema.ts";
@@ -76,7 +77,7 @@ export function createLedgerService(store: LedgerStore): LedgerService {
     return structuredClone(data);
   }
 
-  function newId(next: LedgerData, prefix: "t" | "c"): string {
+  function newId(next: LedgerData, prefix: "t" | "c" | "r"): string {
     const id = `${prefix}${next.nextId}`;
     next.nextId += 1;
     return id;
@@ -111,7 +112,7 @@ export function createLedgerService(store: LedgerStore): LedgerService {
     }
     const problem = mappingProblem(mapping, widthOf(t.value, mapping.delimiter));
     if (problem) return err("invalid", problem, "mapping");
-    return ok(readAll(t.value, mapping, data.transactions));
+    return ok(readAll(t.value, mapping, data.transactions, data.rules));
   }
 
   return {
@@ -119,6 +120,7 @@ export function createLedgerService(store: LedgerStore): LedgerService {
       return {
         settings: { ...data.settings },
         categories: [...data.categories].sort((a, b) => a.name.localeCompare(b.name, "en", { sensitivity: "base" })),
+        rules: structuredClone(data.rules),
         transactionCount: data.transactions.length,
         storage: { ...store.describe(), recovered },
       };
@@ -172,12 +174,13 @@ export function createLedgerService(store: LedgerStore): LedgerService {
       if (!read.ok) return read;
       const { rows, rejected } = read.value;
       return ok({
-        rows: rows.slice(0, PREVIEW_ROWS).map(({ line, date, payee, amount, duplicate }) => ({
+        rows: rows.slice(0, PREVIEW_ROWS).map(({ line, date, payee, amount, duplicate, categoryId }) => ({
           line,
           date,
           payee,
           amount,
           status: duplicate ? ("duplicate" as const) : ("new" as const),
+          categoryId,
         })),
         accepted: rows.filter((r) => !r.duplicate).length,
         duplicates: rows.filter((r) => r.duplicate).length,
@@ -192,11 +195,100 @@ export function createLedgerService(store: LedgerStore): LedgerService {
       const fresh = rows.filter((r) => !r.duplicate);
       const next = copy();
       for (const r of fresh) {
-        next.transactions.push({ id: newId(next, "t"), date: r.date, payee: r.payee, amount: r.amount, categoryId: null, note: "" });
+        next.transactions.push({ id: newId(next, "t"), date: r.date, payee: r.payee, amount: r.amount, categoryId: r.categoryId, note: "" });
       }
       const outcome = { imported: fresh.length, duplicates: rows.length - fresh.length, rejected };
       // Nothing to add: nothing to save.
       return fresh.length === 0 ? ok(outcome) : commit(next, outcome);
+    },
+
+    createCategory(name) {
+      const checked = checkCategoryName(name, data.categories);
+      if (!checked.ok) return checked;
+      const next = copy();
+      const category: Category = { id: newId(next, "c"), name: checked.value };
+      next.categories.push(category);
+      return commit(next, { ...category });
+    },
+
+    renameCategory(id, name) {
+      const index = data.categories.findIndex((c) => c.id === String(id));
+      if (index < 0) return err("not_found", "That category no longer exists.");
+      const checked = checkCategoryName(name, data.categories, data.categories[index].id);
+      if (!checked.ok) return checked;
+      const next = copy();
+      next.categories[index] = { ...next.categories[index], name: checked.value };
+      return commit(next, { ...next.categories[index] });
+    },
+
+    deleteCategory(id) {
+      const target = data.categories.find((c) => c.id === String(id));
+      if (!target) return err("not_found", "That category no longer exists.");
+      const next = copy();
+      let uncategorised = 0;
+      for (const t of next.transactions) {
+        if (t.categoryId === target.id) {
+          t.categoryId = null;
+          uncategorised += 1;
+        }
+      }
+      next.categories = next.categories.filter((c) => c.id !== target.id);
+      next.rules = next.rules.filter((r) => r.categoryId !== target.id);
+      return commit(next, { uncategorised });
+    },
+
+    mergeCategories(sourceId, targetId) {
+      const source = data.categories.find((c) => c.id === String(sourceId));
+      const target = data.categories.find((c) => c.id === String(targetId));
+      if (!source || !target) return err("not_found", "That category no longer exists.");
+      if (source.id === target.id) return err("invalid", "Choose a different category to merge into.", "target");
+      const next = copy();
+      let moved = 0;
+      for (const t of next.transactions) {
+        if (t.categoryId === source.id) {
+          t.categoryId = target.id;
+          moved += 1;
+        }
+      }
+      for (const r of next.rules) if (r.categoryId === source.id) r.categoryId = target.id;
+      next.categories = next.categories.filter((c) => c.id !== source.id);
+      return commit(next, { moved });
+    },
+
+    createRule(contains, categoryId) {
+      const checked = checkRuleText(contains);
+      if (!checked.ok) return checked;
+      const category = data.categories.find((c) => c.id === String(categoryId));
+      if (!category) return err("invalid", "Choose a category for the rule.", "category");
+      const key = checked.value.toLocaleLowerCase();
+      if (data.rules.some((r) => r.contains.toLocaleLowerCase() === key && r.categoryId === category.id)) {
+        return err("conflict", "That rule already exists.", "contains");
+      }
+      const next = copy();
+      const rule = { id: newId(next, "r"), contains: checked.value, categoryId: category.id };
+      next.rules.push(rule);
+      return commit(next, { ...rule });
+    },
+
+    deleteRule(id) {
+      if (!data.rules.some((r) => r.id === String(id))) return err("not_found", "That rule no longer exists.");
+      const next = copy();
+      next.rules = next.rules.filter((r) => r.id !== String(id));
+      return commit(next, null);
+    },
+
+    applyRules() {
+      const next = copy();
+      let categorised = 0;
+      for (const t of next.transactions) {
+        if (t.categoryId !== null) continue;
+        const categoryId = categoryFor(t.payee, next.rules);
+        if (categoryId) {
+          t.categoryId = categoryId;
+          categorised += 1;
+        }
+      }
+      return categorised === 0 ? ok({ categorised }) : commit(next, { categorised });
     },
 
     setCurrency(currency) {

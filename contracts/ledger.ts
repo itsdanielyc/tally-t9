@@ -30,6 +30,9 @@ export type TransactionDraft = {
 
 export type Category = { id: string; name: string };
 
+/** "Payee contains this text, use this category." Matching ignores case; the first rule created wins. */
+export type Rule = { id: string; contains: string; categoryId: string };
+
 /** Currencies with two minor digits; changing it relabels, never converts. */
 export const CURRENCIES = ["USD", "EUR", "GBP", "CAD", "AUD", "NZD", "CHF", "SEK", "NOK", "DKK", "PLN", "INR"] as const;
 export type Currency = (typeof CURRENCIES)[number];
@@ -48,6 +51,8 @@ export type LedgerView = {
   settings: Settings;
   /** sorted by name, case-insensitive */
   categories: Category[];
+  /** in the order they were created, which is the order they are tried */
+  rules: Rule[];
   transactionCount: number;
   storage: StorageInfo;
 };
@@ -98,6 +103,8 @@ export type ImportPreviewRow = {
   amount: number;
   /** "duplicate": identical in date, amount and payee to a transaction already in the ledger; skipped */
   status: "new" | "duplicate";
+  /** the category a rule gives the row, or null */
+  categoryId: string | null;
 };
 
 export type ImportPreview = {
@@ -128,8 +135,19 @@ export interface LedgerApi {
   /** Detects the delimiter, the header and a suggested mapping; the options override detection. */
   inspectImport(text: string, options?: { delimiter?: Delimiter; hasHeader?: boolean }): Promise<Result<ImportInspection>>;
   previewImport(text: string, mapping: ImportMapping): Promise<Result<ImportPreview>>;
-  /** Adds every accepted row in one save, or nothing. */
+  /** Adds every accepted row in one save, or nothing. Rules give imported rows their category. */
   commitImport(text: string, mapping: ImportMapping): Promise<Result<ImportOutcome>>;
+  createCategory(name: string): Promise<Result<Category>>;
+  /** A name already used by another category is a conflict; merge instead. */
+  renameCategory(id: string, name: string): Promise<Result<Category>>;
+  /** Its transactions become uncategorised and its rules are removed. */
+  deleteCategory(id: string): Promise<Result<{ uncategorised: number }>>;
+  /** Moves the source's transactions and rules to the target, then removes the source. */
+  mergeCategories(sourceId: string, targetId: string): Promise<Result<{ moved: number }>>;
+  createRule(contains: string, categoryId: string): Promise<Result<Rule>>;
+  deleteRule(id: string): Promise<Result<null>>;
+  /** Gives every uncategorised transaction the category of the first rule its payee matches. */
+  applyRules(): Promise<Result<{ categorised: number }>>;
 }
 
 export type PlatformInfo = {

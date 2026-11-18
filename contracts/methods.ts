@@ -13,6 +13,13 @@ export const ledgerMethods = [
   "inspectImport",
   "previewImport",
   "commitImport",
+  "createCategory",
+  "renameCategory",
+  "deleteCategory",
+  "mergeCategories",
+  "createRule",
+  "deleteRule",
+  "applyRules",
 ] as const satisfies readonly (keyof LedgerApi)[];
 
 export const platformMethods = ["platformInfo", "chooseImportFile"] as const satisfies readonly (keyof PlatformApi)[];

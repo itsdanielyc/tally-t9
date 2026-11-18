@@ -2,7 +2,7 @@
 // on open. Every version Tally has written keeps opening: a committed
 // fixture per version under tests/fixtures/ is opened by the L3 suite.
 // Collections added after a version was first written default to empty.
-import type { Category, Currency, Settings, Transaction } from "../contracts/ledger.ts";
+import type { Category, Currency, Rule, Settings, Transaction } from "../contracts/ledger.ts";
 import { CURRENCIES } from "../contracts/ledger.ts";
 import { isValidDate } from "./dates.ts";
 import { isValidMinor } from "./money.ts";
@@ -17,7 +17,9 @@ export type LedgerData = {
   /** in the order they were added; listing sorts them */
   transactions: Transaction[];
   categories: Category[];
-  /** the next number used to make an id ("t12", "c3") */
+  /** added in slice 3; a file without it opens with none */
+  rules: Rule[];
+  /** the next number used to make an id ("t12", "c3", "r4") */
   nextId: number;
 };
 
@@ -28,6 +30,7 @@ export function emptyLedger(): LedgerData {
     settings: { currency: "USD" },
     transactions: [],
     categories: [],
+    rules: [],
     nextId: 1,
   };
 }
@@ -99,6 +102,19 @@ export function parseLedger(raw: unknown): ParseResult {
     });
   }
 
+  if (raw.rules !== undefined && !Array.isArray(raw.rules)) return fail("rules are not a list");
+  const rules: Rule[] = [];
+  const ruleIds = new Set<string>();
+  for (const [i, r] of (raw.rules ?? []).entries()) {
+    if (!isObject(r) || typeof r.id !== "string" || typeof r.contains !== "string" || r.contains.trim() === "" || typeof r.categoryId !== "string") {
+      return fail(`rule ${i + 1} is malformed`);
+    }
+    if (ruleIds.has(r.id)) return fail(`rule id ${r.id} appears twice`);
+    ruleIds.add(r.id);
+    // A rule whose category is gone is dropped rather than refusing the file.
+    if (categoryIds.has(r.categoryId)) rules.push({ id: r.id, contains: r.contains, categoryId: r.categoryId });
+  }
+
   const nextId = typeof raw.nextId === "number" && Number.isSafeInteger(raw.nextId) && raw.nextId > 0 ? raw.nextId : 1;
   const data: LedgerData = {
     format: FORMAT,
@@ -106,8 +122,9 @@ export function parseLedger(raw: unknown): ParseResult {
     settings: { currency },
     transactions,
     categories,
+    rules,
     // Never hand out an id that is already in use, whatever nextId says.
-    nextId: Math.max(nextId, maxIdNumber([...ids, ...categoryIds]) + 1),
+    nextId: Math.max(nextId, maxIdNumber([...ids, ...categoryIds, ...ruleIds]) + 1),
   };
   return { ok: true, data, migratedFrom };
 }

@@ -3,6 +3,12 @@
 // is the one engine; CI runs it on all three OS runners.
 import { defineConfig, devices } from "@playwright/test";
 
+// TALLY_UI_PORT moves the dev server off 1420 when another project on the
+// same machine uses it. An already running server is reused only when asked
+// (PW_REUSE_SERVER=1): reusing whatever answers on the port can test the
+// wrong app.
+const port = Number(process.env.TALLY_UI_PORT ?? 1420);
+
 export default defineConfig({
   testDir: "tests/ui",
   fullyParallel: true,
@@ -22,7 +28,7 @@ export default defineConfig({
     },
   },
   use: {
-    baseURL: "http://localhost:1420",
+    baseURL: `http://localhost:${port}`,
     viewport: { width: 1024, height: 700 },
     deviceScaleFactor: 1,
     trace: "retain-on-failure",
@@ -32,9 +38,9 @@ export default defineConfig({
     { name: "chromium", use: { ...devices["Desktop Chrome"], viewport: { width: 1024, height: 700 } } },
   ],
   webServer: {
-    command: "npm run dev:web -- --strictPort --port 1420",
-    url: "http://localhost:1420",
-    reuseExistingServer: !process.env.CI,
+    command: `npm run dev:web -- --strictPort --port ${port}`,
+    url: `http://localhost:${port}`,
+    reuseExistingServer: process.env.PW_REUSE_SERVER === "1",
     timeout: 60_000,
   },
 });

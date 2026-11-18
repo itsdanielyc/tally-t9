@@ -55,6 +55,8 @@ export type LedgerView = {
   rules: Rule[];
   /** monthly budget per category id, in minor units (positive) */
   budgets: Record<string, number>;
+  /** what undo() would undo (the most recent delete, merge or import), or null */
+  undo: { label: string } | null;
   transactionCount: number;
   storage: StorageInfo;
 };
@@ -114,7 +116,28 @@ export type ImportMapping = {
   amount: AmountMapping;
   dateOrder: DateOrder;
   decimal: "." | ",";
+  /** optional: a column of category names (created when new); a row's category beats the rules */
+  category?: number | null;
+  /** optional: a column of notes */
+  note?: number | null;
 };
+
+// ---- Find, export, undo (slice 5) ----
+
+export type TransactionFilter = {
+  /** found in the payee or the note, ignoring case */
+  text?: string;
+  /** "any" (default), "none" for uncategorised, or a category id */
+  category?: string;
+  /** first and last date, inclusive (YYYY-MM-DD) */
+  from?: string;
+  to?: string;
+  /** smallest and largest amount, inclusive, compared without the sign, in minor units */
+  minAmount?: number;
+  maxAmount?: number;
+};
+
+export type CsvExport = { text: string; count: number; suggestedName: string };
 
 export type ImportInspection = {
   delimiter: Delimiter;
@@ -136,8 +159,11 @@ export type ImportPreviewRow = {
   amount: number;
   /** "duplicate": identical in date, amount and payee to a transaction already in the ledger; skipped */
   status: "new" | "duplicate";
-  /** the category a rule gives the row, or null */
+  /** the category the row gets from its category column or a rule: its id when it exists already, else null */
   categoryId: string | null;
+  /** that category's name, "" for none (a name not yet in the ledger is created on import) */
+  category: string;
+  note: string;
 };
 
 export type ImportPreview = {
@@ -159,8 +185,8 @@ export type ImportFile = { name: string; text: string };
 /** Served by core/service.ts in both the main process and the mock. */
 export interface LedgerApi {
   getLedger(): Promise<LedgerView>;
-  /** newest first: date descending, then most recently added first */
-  listTransactions(): Promise<Transaction[]>;
+  /** newest first: date descending, then most recently added first; only those the filter matches */
+  listTransactions(filter?: TransactionFilter): Promise<Transaction[]>;
   addTransaction(draft: TransactionDraft): Promise<Result<Transaction>>;
   updateTransaction(id: string, draft: TransactionDraft): Promise<Result<Transaction>>;
   deleteTransaction(id: string): Promise<Result<null>>;
@@ -184,6 +210,10 @@ export interface LedgerApi {
   monthSummary(month: string): Promise<Result<MonthSummary>>;
   /** A positive amount sets the category's monthly budget; null or 0 removes it. */
   setBudget(categoryId: string, amount: number | null): Promise<Result<{ categoryId: string; amount: number | null }>>;
+  /** The transactions the filter shows, as a CSV that Tally's own import reads back unchanged. */
+  exportCsv(filter?: TransactionFilter): Promise<Result<CsvExport>>;
+  /** Undoes the most recent delete, category merge or import, once. Any other change clears it. */
+  undo(): Promise<Result<{ undone: string }>>;
 }
 
 export type PlatformInfo = {
@@ -202,4 +232,6 @@ export interface PlatformApi {
   platformInfo(): Promise<PlatformInfo>;
   /** Shows the open-file dialog for a CSV; null when the person cancels. */
   chooseImportFile(): Promise<Result<ImportFile | null>>;
+  /** Shows the save dialog and writes the CSV; null when the person cancels. */
+  saveExportFile(text: string, suggestedName: string): Promise<Result<{ path: string } | null>>;
 }

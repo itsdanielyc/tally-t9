@@ -7,7 +7,8 @@
 //   TALLY_DATA_DIR          the directory that holds ledger.json (the L6 suite uses a temp dir)
 //   TALLY_TEST_IMPORT_FILE  the file the open dialog answers with, because no
 //                           test driver can see a native file dialog
-import { app, BrowserWindow, dialog, ipcMain, shell, type IpcMainInvokeEvent, type OpenDialogOptions } from "electron";
+//   TALLY_TEST_EXPORT_FILE  the path the save dialog answers with, for the same reason
+import { app, BrowserWindow, dialog, ipcMain, shell, type IpcMainInvokeEvent, type OpenDialogOptions, type SaveDialogOptions } from "electron";
 import { readFileSync, statSync } from "node:fs";
 import { basename, join } from "node:path";
 import type { ImportFile, PlatformApi, PlatformInfo, Result } from "../contracts/ledger.ts";
@@ -15,7 +16,7 @@ import { channelFor, ledgerMethods, platformMethods, type PlatformMethod } from 
 import { decodeCsvBytes } from "../core/csv.ts";
 import { MAX_IMPORT_CHARS } from "../core/importer.ts";
 import { createLedgerService, type LedgerService } from "../core/service.ts";
-import { createFileStore } from "./store.ts";
+import { createFileStore, writeTextAtomic } from "./store.ts";
 
 function dataDir(): string {
   const override = process.env.TALLY_DATA_DIR;
@@ -62,10 +63,39 @@ async function chooseImportFile(win: BrowserWindow | null): Promise<Result<Impor
   }
 }
 
+async function saveExportFile(win: BrowserWindow | null, text: unknown, suggestedName: unknown): Promise<Result<{ path: string } | null>> {
+  if (typeof text !== "string" || text.length > MAX_IMPORT_CHARS) {
+    return { ok: false, error: { code: "invalid", message: "There is nothing to export." } };
+  }
+  const name = basename(String(suggestedName || "tally-export.csv")).replace(/[^\w.\- ]/g, "_");
+  let path = testOnly("TALLY_TEST_EXPORT_FILE");
+  if (!path) {
+    const options: SaveDialogOptions = {
+      title: "Export transactions",
+      defaultPath: join(app.getPath("documents"), name),
+      filters: [{ name: "CSV files", extensions: ["csv"] }],
+    };
+    const picked = win ? await dialog.showSaveDialog(win, options) : await dialog.showSaveDialog(options);
+    if (picked.canceled || !picked.filePath) return { ok: true, value: null };
+    path = picked.filePath;
+  }
+  try {
+    writeTextAtomic(path, text);
+    return { ok: true, value: { path } };
+  } catch (e) {
+    return { ok: false, error: { code: "io", message: `${basename(path)} could not be written: ${(e as Error).message}` } };
+  }
+}
+
+type PlatformHandlers = {
+  [K in PlatformMethod]: (event: IpcMainInvokeEvent, ...args: Parameters<PlatformApi[K]>) => ReturnType<PlatformApi[K]>;
+};
+
 /** One handler per platform method; the type makes a missing one a compile error. */
-const platform: { [K in PlatformMethod]: (event: IpcMainInvokeEvent) => ReturnType<PlatformApi[K]> } = {
+const platform: PlatformHandlers = {
   platformInfo: async () => platformInfo(),
   chooseImportFile: (event) => chooseImportFile(BrowserWindow.fromWebContents(event.sender)),
+  saveExportFile: (event, text, suggestedName) => saveExportFile(BrowserWindow.fromWebContents(event.sender), text, suggestedName),
 };
 
 /** Only the app's own page may call the backend. */
@@ -83,9 +113,10 @@ function registerHandlers(service: LedgerService): void {
     });
   }
   for (const method of platformMethods) {
-    ipcMain.handle(channelFor(method), (event) => {
+    const handler = platform[method] as (event: IpcMainInvokeEvent, ...args: unknown[]) => unknown;
+    ipcMain.handle(channelFor(method), (event, ...args: unknown[]) => {
       if (!trusted(event)) throw new Error("Refused a call from an untrusted page.");
-      return platform[method](event);
+      return handler(event, ...args);
     });
   }
 }

@@ -1,0 +1,89 @@
+- banner:
+  - text: Tally
+  - navigation "Sections":
+    - button "Transactions"
+    - button "Settings"
+- main:
+  - heading "Transactions" [level=1]
+  - heading "Add a transaction" [level=2]
+  - form "Add a transaction":
+    - text: Date
+    - textbox "Date": /\d+-\d+-\d+/
+    - text: Payee
+    - textbox "Payee"
+    - radiogroup "Type":
+      - text: ""
+      - radio "Spending" [checked]
+      - text: Spending
+      - radio "Income"
+      - text: Income
+    - text: Amount (USD)
+    - textbox "Amount (USD)":
+      - /placeholder: "0.00"
+    - text: Category
+    - combobox "Category"
+    - text: Note
+    - textbox "Note"
+    - button "Add"
+    - alert
+  - region "Transaction list":
+    - status
+    - table "Transactions, newest first":
+      - rowgroup:
+        - row "Date Payee Category Note Amount (USD) Actions":
+          - columnheader "Date"
+          - columnheader "Payee"
+          - columnheader "Category"
+          - columnheader "Note"
+          - columnheader "Amount (USD)"
+          - columnheader "Actions"
+      - rowgroup:
+        - row /\d+-\d+-\d+ Farmers Market Groceries -\d+\.\d+ Edit Farmers Market on \d+-\d+-\d+ Delete Farmers Market on \d+-\d+-\d+/:
+          - cell /\d+-\d+-\d+/
+          - cell "Farmers Market"
+          - cell "Groceries"
+          - cell
+          - cell /-\d+\.\d+/
+          - cell /Edit Farmers Market on \d+-\d+-\d+ Delete Farmers Market on \d+-\d+-\d+/:
+            - button /Edit Farmers Market on \d+-\d+-\d+/
+            - button /Delete Farmers Market on \d+-\d+-\d+/
+        - row /\d+-\d+-\d+ Corner Shop Groceries milk, bread -\d+\.\d+ Edit Corner Shop on \d+-\d+-\d+ Delete Corner Shop on \d+-\d+-\d+/:
+          - cell /\d+-\d+-\d+/
+          - cell "Corner Shop"
+          - cell "Groceries"
+          - cell "milk, bread"
+          - cell /-\d+\.\d+/
+          - cell /Edit Corner Shop on \d+-\d+-\d+ Delete Corner Shop on \d+-\d+-\d+/:
+            - button /Edit Corner Shop on \d+-\d+-\d+/
+            - button /Delete Corner Shop on \d+-\d+-\d+/
+        - row /\d+-\d+-\d+ Employer Ltd Salary \d+,\d+\.\d+ Edit Employer Ltd on \d+-\d+-\d+ Delete Employer Ltd on \d+-\d+-\d+/:
+          - cell /\d+-\d+-\d+/
+          - cell "Employer Ltd"
+          - cell "Salary"
+          - cell
+          - cell /\d+,\d+\.\d+/
+          - cell /Edit Employer Ltd on \d+-\d+-\d+ Delete Employer Ltd on \d+-\d+-\d+/:
+            - button /Edit Employer Ltd on \d+-\d+-\d+/
+            - button /Delete Employer Ltd on \d+-\d+-\d+/
+        - row /\d+-\d+-\d+ Landlord Housing March rent -\d+\.\d+ Edit Landlord on \d+-\d+-\d+ Delete Landlord on \d+-\d+-\d+/:
+          - cell /\d+-\d+-\d+/
+          - cell "Landlord"
+          - cell "Housing"
+          - cell "March rent"
+          - cell /-\d+\.\d+/
+          - cell /Edit Landlord on \d+-\d+-\d+ Delete Landlord on \d+-\d+-\d+/:
+            - button /Edit Landlord on \d+-\d+-\d+/
+            - button /Delete Landlord on \d+-\d+-\d+/
+        - row /\d+-\d+-\d+ Water Utility quarterly -\d+\.\d+ Edit Water Utility on \d+-\d+-\d+ Delete Water Utility on \d+-\d+-\d+/:
+          - cell /\d+-\d+-\d+/
+          - cell "Water Utility"
+          - cell
+          - cell "quarterly"
+          - cell /-\d+\.\d+/
+          - cell /Edit Water Utility on \d+-\d+-\d+ Delete Water Utility on \d+-\d+-\d+/:
+            - button /Edit Water Utility on \d+-\d+-\d+/
+            - button /Delete Water Utility on \d+-\d+-\d+/
+- contentinfo:
+  - text: "backend:"
+  - strong: mock
+  - text: "platform: mock / mock"

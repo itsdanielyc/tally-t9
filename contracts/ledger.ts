@@ -56,6 +56,66 @@ export type ErrorCode = "invalid" | "not_found" | "conflict" | "io";
 export type LedgerError = { code: ErrorCode; message: string; field?: string };
 export type Result<T> = { ok: true; value: T } | { ok: false; error: LedgerError };
 
+// ---- Import (slice 2) ----
+
+export type Delimiter = "," | ";" | "\t" | "|";
+/** The order of day, month and year in the file's dates. */
+export type DateOrder = "YMD" | "DMY" | "MDY";
+
+/** Columns are 0-based indexes into each row. */
+export type AmountMapping =
+  | { kind: "signed"; column: number }
+  /** debit is money out (stored negative), credit is money in (stored positive) */
+  | { kind: "debitCredit"; debit: number; credit: number };
+
+export type ImportMapping = {
+  delimiter: Delimiter;
+  hasHeader: boolean;
+  date: number;
+  payee: number;
+  amount: AmountMapping;
+  dateOrder: DateOrder;
+  decimal: "." | ",";
+};
+
+export type ImportInspection = {
+  delimiter: Delimiter;
+  hasHeader: boolean;
+  /** header names, or "Column 1", "Column 2", ... when there is no header */
+  columns: string[];
+  /** rows after the header, not counting blank lines */
+  rowCount: number;
+  /** the best guess at a mapping; the person can change every field */
+  suggested: ImportMapping;
+};
+
+export type ImportRejection = { line: number; reason: string };
+
+export type ImportPreviewRow = {
+  line: number;
+  date: string;
+  payee: string;
+  amount: number;
+  /** "duplicate": identical in date, amount and payee to a transaction already in the ledger; skipped */
+  status: "new" | "duplicate";
+};
+
+export type ImportPreview = {
+  /** the first rows that can be read, as they will be imported */
+  rows: ImportPreviewRow[];
+  /** rows that will be added */
+  accepted: number;
+  /** rows skipped as duplicates */
+  duplicates: number;
+  /** rows that cannot be read, with line number and reason */
+  rejected: ImportRejection[];
+};
+
+export type ImportOutcome = { imported: number; duplicates: number; rejected: ImportRejection[] };
+
+/** A file the person picked: its name and decoded text. */
+export type ImportFile = { name: string; text: string };
+
 /** Served by core/service.ts in both the main process and the mock. */
 export interface LedgerApi {
   getLedger(): Promise<LedgerView>;
@@ -65,6 +125,11 @@ export interface LedgerApi {
   updateTransaction(id: string, draft: TransactionDraft): Promise<Result<Transaction>>;
   deleteTransaction(id: string): Promise<Result<null>>;
   setCurrency(currency: string): Promise<Result<Settings>>;
+  /** Detects the delimiter, the header and a suggested mapping; the options override detection. */
+  inspectImport(text: string, options?: { delimiter?: Delimiter; hasHeader?: boolean }): Promise<Result<ImportInspection>>;
+  previewImport(text: string, mapping: ImportMapping): Promise<Result<ImportPreview>>;
+  /** Adds every accepted row in one save, or nothing. */
+  commitImport(text: string, mapping: ImportMapping): Promise<Result<ImportOutcome>>;
 }
 
 export type PlatformInfo = {
@@ -81,4 +146,6 @@ export type PlatformInfo = {
 /** Served by the main process (and imitated by the mock): the OS side. */
 export interface PlatformApi {
   platformInfo(): Promise<PlatformInfo>;
+  /** Shows the open-file dialog for a CSV; null when the person cancels. */
+  chooseImportFile(): Promise<Result<ImportFile | null>>;
 }

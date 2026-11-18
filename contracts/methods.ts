@@ -10,9 +10,12 @@ export const ledgerMethods = [
   "updateTransaction",
   "deleteTransaction",
   "setCurrency",
+  "inspectImport",
+  "previewImport",
+  "commitImport",
 ] as const satisfies readonly (keyof LedgerApi)[];
 
-export const platformMethods = ["platformInfo"] as const satisfies readonly (keyof PlatformApi)[];
+export const platformMethods = ["platformInfo", "chooseImportFile"] as const satisfies readonly (keyof PlatformApi)[];
 
 export type LedgerMethod = (typeof ledgerMethods)[number];
 export type PlatformMethod = (typeof platformMethods)[number];

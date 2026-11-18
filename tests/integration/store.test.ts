@@ -130,6 +130,8 @@ describe("file versions", () => {
     expect(s.getLedger()).toMatchObject({
       settings: { currency: "EUR" },
       transactionCount: 3,
+      // Written before rules existed (slice 1): opens with none.
+      rules: [],
       categories: [
         { id: "c5", name: "Eating out" },
         { id: "c2", name: "Housing" },

@@ -24,4 +24,7 @@ export const isNative = bridge !== undefined;
 
 export const backend: Backend = bridge
   ? { ...bridge, kind: "native" }
-  : createMockBackend(typeof window !== "undefined" ? seedFromHooks(window.__TALLY_MOCK__) : undefined);
+  : createMockBackend(
+      typeof window !== "undefined" ? seedFromHooks(window.__TALLY_MOCK__) : undefined,
+      () => (typeof window !== "undefined" ? window.__TALLY_MOCK__ : undefined),
+    );

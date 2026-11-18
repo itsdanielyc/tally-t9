@@ -2,8 +2,9 @@
 // It runs the same ledger service as the main process (core/service.ts)
 // over an in-memory store, and clones every argument and result the way
 // IPC would. tests/contract runs the same calls against this mock and
-// against the service over the real file store.
-import type { LedgerApi, PlatformApi } from "../contracts/ledger.ts";
+// against the service over the real file store. What the main process does
+// with the OS (file dialogs) the mock does from a queue a test fills.
+import type { ImportFile, LedgerApi, PlatformApi } from "../contracts/ledger.ts";
 import { ledgerMethods } from "../contracts/methods.ts";
 import { emptyLedger, parseLedger, type LedgerData } from "../core/schema.ts";
 import { createLedgerService, memoryStore } from "../core/service.ts";
@@ -12,17 +13,20 @@ export interface Backend extends LedgerApi, PlatformApi {
   readonly kind: "native" | "mock";
 }
 
-/** Test hooks a browser-mode test sets before the page loads (page.addInitScript). */
+/** Test hooks a browser-mode test sets before or after the page loads (page.addInitScript, page.evaluate). */
 export type MockHooks = {
   /** the content of a ledger file to start the mock from */
   seed?: unknown;
+  /** what the open-file dialog answers, first in first out; empty means the person cancelled */
+  files?: ImportFile[];
 };
 
-export function createMockBackend(seed?: LedgerData): Backend {
+export function createMockBackend(seed?: LedgerData, hooks: () => MockHooks | undefined = () => undefined): Backend {
   const service = createLedgerService(memoryStore(seed ?? emptyLedger()));
   const backend: Record<string, unknown> = {
     kind: "mock",
     platformInfo: async () => ({ os: "mock", arch: "mock", electron: "mock", packaged: false }),
+    chooseImportFile: async () => ({ ok: true, value: structuredClone(hooks()?.files?.shift() ?? null) }),
   };
   for (const method of ledgerMethods) {
     const call = service[method] as (...args: unknown[]) => unknown;

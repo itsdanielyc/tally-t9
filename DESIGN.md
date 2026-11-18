@@ -75,3 +75,18 @@ a later design pass may restyle screens and refresh the visual baselines.
   only chart the brief allows.
 - A category with a budget is listed even in a month with nothing spent,
   so its full budget shows as left.
+
+## Slice 5
+
+- Find sits in its own slim card between the form and the list: one search
+  box for payee and note, then category, a date range and an amount range
+  (sizes without a sign), and "Clear filters". The list follows the filters
+  as they are typed; a line above it says "Showing N of M".
+- "Export shown…" exports exactly the rows on screen, so the person never
+  has to wonder what went into the file; the status line names the file.
+- Undo is one bar under the top bar, on every screen, naming what it would
+  undo ("Deleted Corner Shop.") with one button; after use it says
+  "Undone: …" without a button, so undo happens once. Any other change
+  removes the bar.
+- The import mapping gains optional Category and Note columns ("(none)" by
+  default), which the export's own header fills in by itself.

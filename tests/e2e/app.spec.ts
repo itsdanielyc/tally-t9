@@ -45,11 +45,11 @@ test.describe("tally in the real shell", () => {
 
   test("a transaction typed in is still there, unchanged, after a restart", async () => {
     const win = tally.win;
-    await win.getByLabel("Date").fill("2026-03-14");
-    await win.getByLabel("Payee").fill("Corner Shop");
+    await win.getByLabel("Date", { exact: true }).fill("2026-03-14");
+    await win.getByLabel("Payee", { exact: true }).fill("Corner Shop");
     await win.getByLabel(/^Amount/).fill("12.50");
-    await win.getByLabel("Category").fill("Groceries");
-    await win.getByLabel("Note").fill('milk, "organic"');
+    await win.getByLabel("Category", { exact: true }).fill("Groceries");
+    await win.getByLabel("Note", { exact: true }).fill('milk, "organic"');
     await win.getByRole("button", { name: "Add", exact: true }).click();
     await expect(rows()).toHaveCount(1);
     await expect(rows().first().locator("td.num")).toHaveText("-12.50");

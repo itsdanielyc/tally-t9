@@ -29,7 +29,29 @@
     - textbox "Note"
     - button "Add"
     - alert
+  - region "Find":
+    - form "Find transactions":
+      - text: Search payee and note
+      - searchbox "Search payee and note"
+      - text: Show category
+      - combobox "Show category":
+        - option "Any category" [selected]
+        - option "Uncategorised"
+        - option "Groceries"
+        - option "Housing"
+        - option "Salary"
+      - text: From
+      - textbox "From"
+      - text: To
+      - textbox "To"
+      - text: Smallest amount
+      - textbox "Smallest amount"
+      - text: Largest amount
+      - textbox "Largest amount"
+      - button "Clear filters"
   - region "Transaction list":
+    - paragraph: 5 transactions
+    - button "Export shown…"
     - status
     - table "Transactions, newest first":
       - rowgroup:

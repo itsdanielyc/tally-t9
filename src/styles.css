@@ -123,7 +123,7 @@ button[hidden] { display: none; }
 
 .tx-form {
   display: grid;
-  grid-template-columns: 140px 1fr 160px 120px 190px;
+  grid-template-columns: 140px minmax(0, 1fr) auto 120px 190px;
   gap: 12px;
   align-items: end;
 }
@@ -194,6 +194,7 @@ button[hidden] { display: none; }
 .rejected { margin-bottom: 12px; }
 .card[hidden] { display: none; }
 .actions { display: flex; gap: 8px; }
+.actions.spaced { margin-top: 12px; }
 
 /* Categories and rules */
 .inline-form { display: flex; gap: 12px; align-items: end; margin-bottom: 4px; }
@@ -223,6 +224,34 @@ button[hidden] { display: none; }
 .bar { height: 10px; border-radius: 5px; background: var(--bg); border: 1px solid var(--border); overflow: hidden; }
 .bar .fill { height: 100%; background: var(--accent); }
 .bar.over .fill { background: var(--neg); }
+
+/* Find and export */
+.card.find { padding: 12px 16px; }
+/* Fixed widths and one-line labels, so the card wraps the same way on every
+   OS's fonts (tier 2 caught Linux wrapping the labels onto two lines). */
+.find-form { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: end; }
+.find-form .field { flex: 0 0 auto; }
+.find-form .field.grow { flex: 1 1 260px; }
+.find-form .field > label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.find-form select { width: 170px; }
+.find-form input[type="date"] { width: 150px; }
+.find-form .field.small input { width: 130px; }
+.find-form .field.grow input { width: 100%; min-width: 0; }
+.find-form .break { flex-basis: 100%; height: 0; }
+.list-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+.count { margin: 0; color: var(--muted); }
+.undo-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 12px 24px 0;
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #eef5f1;
+}
+.undo-bar[hidden] { display: none; }
+.undo-bar button { height: 26px; }
 
 .meta {
   display: flex;

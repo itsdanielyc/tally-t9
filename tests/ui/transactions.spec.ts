@@ -6,12 +6,12 @@ import { checkGeometry, checkPixels, openApp, seedLedger } from "./support";
 const rows = (page: Page) => page.getByRole("table", { name: "Transactions, newest first" }).locator("tbody tr");
 
 async function add(page: Page, t: { date?: string; payee: string; amount: string; income?: boolean; category?: string; note?: string }) {
-  if (t.date) await page.getByLabel("Date").fill(t.date);
-  await page.getByLabel("Payee").fill(t.payee);
+  if (t.date) await page.getByLabel("Date", { exact: true }).fill(t.date);
+  await page.getByLabel("Payee", { exact: true }).fill(t.payee);
   await page.getByLabel(t.income ? "Income" : "Spending").check();
   await page.getByLabel(/^Amount/).fill(t.amount);
-  await page.getByLabel("Category").fill(t.category ?? "");
-  await page.getByLabel("Note").fill(t.note ?? "");
+  await page.getByLabel("Category", { exact: true }).fill(t.category ?? "");
+  await page.getByLabel("Note", { exact: true }).fill(t.note ?? "");
   await page.getByRole("button", { name: "Add", exact: true }).click();
 }
 
@@ -23,7 +23,7 @@ test.describe("recording transactions", () => {
   test("starts empty with today's date in the form", async ({ page }) => {
     await expect(page.getByRole("heading", { name: "Transactions", level: 1 })).toBeVisible();
     await expect(page.getByText("No transactions yet.")).toBeVisible();
-    await expect(page.getByLabel("Date")).toHaveValue("2026-03-15");
+    await expect(page.getByLabel("Date", { exact: true })).toHaveValue("2026-03-15");
     await expect(page.getByLabel("Spending")).toBeChecked();
   });
 
@@ -42,8 +42,8 @@ test.describe("recording transactions", () => {
     await expect(rows(page).nth(1).locator("td.num")).toHaveText("-12.50");
     await expect(rows(page).nth(2).locator("td.num")).toHaveText("-950.00");
     // The form keeps the date and type for the next entry and clears the rest.
-    await expect(page.getByLabel("Payee")).toHaveValue("");
-    await expect(page.getByLabel("Payee")).toBeFocused();
+    await expect(page.getByLabel("Payee", { exact: true })).toHaveValue("");
+    await expect(page.getByLabel("Payee", { exact: true })).toBeFocused();
   });
 
   test("on the same date the one added last comes first", async ({ page }) => {
@@ -56,7 +56,7 @@ test.describe("recording transactions", () => {
   test("explains a bad entry and saves nothing", async ({ page }) => {
     await add(page, { payee: "", amount: "5" });
     await expect(page.getByRole("alert").filter({ hasText: "Enter a payee." })).toBeVisible();
-    await expect(page.getByLabel("Payee")).toHaveAttribute("aria-invalid", "true");
+    await expect(page.getByLabel("Payee", { exact: true })).toHaveAttribute("aria-invalid", "true");
     await add(page, { payee: "Shop", amount: "12.345" });
     await expect(page.getByRole("alert").filter({ hasText: "more than 2 decimal places" })).toBeVisible();
     await add(page, { payee: "Shop", amount: "0" });
@@ -69,9 +69,9 @@ test.describe("recording transactions", () => {
     await page.getByRole("button", { name: "Edit Corner Shop on 2026-03-10" }).click();
     await expect(page.getByRole("heading", { name: "Edit transaction" })).toBeVisible();
     await expect(page.getByLabel(/^Amount/)).toHaveValue("12.50");
-    await expect(page.getByLabel("Category")).toHaveValue("Groceries");
+    await expect(page.getByLabel("Category", { exact: true })).toHaveValue("Groceries");
     await page.getByLabel(/^Amount/).fill("13.75");
-    await page.getByLabel("Note").fill("corrected");
+    await page.getByLabel("Note", { exact: true }).fill("corrected");
     await page.getByRole("button", { name: "Save changes" }).click();
     await expect(page.getByTestId("tx-status")).toHaveText("Saved Corner Shop.");
     await expect(rows(page)).toHaveCount(1);
@@ -83,10 +83,10 @@ test.describe("recording transactions", () => {
   test("cancel leaves an edit unsaved", async ({ page }) => {
     await add(page, { date: "2026-03-10", payee: "Corner Shop", amount: "12.50" });
     await page.getByRole("button", { name: "Edit Corner Shop on 2026-03-10" }).click();
-    await page.getByLabel("Payee").fill("Changed");
+    await page.getByLabel("Payee", { exact: true }).fill("Changed");
     await page.getByRole("button", { name: "Cancel" }).click();
     await expect(rows(page).first()).toContainText("Corner Shop");
-    await expect(page.getByLabel("Payee")).toHaveValue("");
+    await expect(page.getByLabel("Payee", { exact: true })).toHaveValue("");
   });
 
   test("deletes only after confirming", async ({ page }) => {

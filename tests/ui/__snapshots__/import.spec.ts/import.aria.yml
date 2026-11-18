@@ -43,6 +43,18 @@
     - combobox "Decimal separator":
       - option /Point \(\d+,\d+\.\d+\)/ [selected]
       - option /Comma \(\d+\.\d+,\d+\)/
+    - text: Category column (optional)
+    - combobox "Category column (optional)":
+      - option "(none)" [selected]
+      - option "Date"
+      - option "Description"
+      - option "Amount"
+    - text: Note column (optional)
+    - combobox "Note column (optional)":
+      - option "(none)" [selected]
+      - option "Date"
+      - option "Description"
+      - option "Amount"
     - radiogroup "Amounts":
       - text: ""
       - radio "One column, negative is spending" [checked]

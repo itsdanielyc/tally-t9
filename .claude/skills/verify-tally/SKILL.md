@@ -39,9 +39,11 @@ Read cold, mid-task. Every command below is real for this repository.
   transactions through the UI, relaunches the app and checks the list and
   the file on disk; add journeys under `tests/e2e/`.
 - File dialogs cannot be driven by any test tool: an unpackaged build
-  answers the open dialog with `TALLY_TEST_IMPORT_FILE=<path>` instead
-  (`tests/e2e/import.spec.ts` does this with a fixture from
-  `tests/fixtures/csv/`).
+  answers the open dialog with `TALLY_TEST_IMPORT_FILE=<path>` and the
+  save dialog with `TALLY_TEST_EXPORT_FILE=<path>` instead
+  (`tests/e2e/import.spec.ts` and `tests/e2e/export.spec.ts`).
+- On a machine shared with other projects, run the browser suite on a
+  free port: `TALLY_UI_PORT=1497 npm run test:ui`.
 - The bridge directly, from a Playwright `win.evaluate`:
   `window.electronBridge.listTransactions()`; the method list is
   `contracts/methods.ts`.

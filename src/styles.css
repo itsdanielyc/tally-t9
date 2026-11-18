@@ -206,6 +206,24 @@ button[hidden] { display: none; }
 .tx-table td input { height: 26px; width: 100%; }
 .inline-label { color: var(--muted); font-size: 13px; }
 
+/* Month */
+.month-nav { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.month-nav .month-title { margin: 0; min-width: 160px; text-align: center; font-size: 16px; line-height: 24px; }
+.month-nav input[type="month"] { margin-left: auto; width: 170px; }
+.totals { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin: 0; }
+.totals .total { display: flex; flex-direction: column; gap: 4px; }
+.totals dt { font-size: 12px; line-height: 16px; color: var(--muted); }
+.totals dd { margin: 0; font-size: 20px; line-height: 28px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.totals dd.neg { color: var(--neg); }
+.totals dd.pos { color: var(--pos); }
+.month-table .col-bar { width: 150px; }
+.month-table .col-budget-actions { width: 150px; text-align: right; }
+.month-table .col-budget-actions button { height: 26px; padding: 0 8px; margin-left: 4px; font-size: 13px; }
+.month-table td input { text-align: right; }
+.bar { height: 10px; border-radius: 5px; background: var(--bg); border: 1px solid var(--border); overflow: hidden; }
+.bar .fill { height: 100%; background: var(--accent); }
+.bar.over .fill { background: var(--neg); }
+
 .meta {
   display: flex;
   gap: 24px;

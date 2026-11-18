@@ -4,6 +4,7 @@
     - button "Transactions"
     - button "Import"
     - button "Categories"
+    - button "Month"
     - button "Settings"
 - main:
   - heading "Import" [level=1]

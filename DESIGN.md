@@ -60,3 +60,18 @@ a later design pass may restyle screens and refresh the visual baselines.
   status, because it changes many transactions at once.
 - The import preview gains a Category column showing what the rules will
   give each row before anything is saved.
+
+## Slice 4
+
+- The Month screen reads top to bottom as the question the brief asks:
+  which month (Previous / Next and a month picker), income against
+  spending against net in large figures, then each category, then the
+  transactions those numbers add up from.
+- Month names are written out in English ("March 2026") rather than by the
+  system locale, so the heading and the tier 1 baseline are the same on
+  every machine.
+- Budgets are edited in the category's own row; "Left" shows the amount
+  left, or "N over" in red, beside a simple bar (green, red when over), the
+  only chart the brief allows.
+- A category with a budget is listed even in a month with nothing spent,
+  so its full budget shows as left.

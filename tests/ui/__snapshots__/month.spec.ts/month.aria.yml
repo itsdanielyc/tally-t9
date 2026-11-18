@@ -1,0 +1,95 @@
+- banner:
+  - text: Tally
+  - navigation "Sections":
+    - button "Transactions"
+    - button "Import"
+    - button "Categories"
+    - button "Month"
+    - button "Settings"
+- main:
+  - heading "Month" [level=1]
+  - button "Previous month"
+  - heading /March \d+/ [level=2]
+  - button "Next month": Next ›
+  - textbox "Month": /\d+-\d+/
+  - region /March \d+/:
+    - term: Income (USD)
+    - definition: /\d+,\d+\.\d+/
+    - term: Spending (USD)
+    - definition: /\d+,\d+\.\d+/
+    - term: Net (USD)
+    - definition: /\d+,\d+\.\d+/
+  - region "By category":
+    - heading "By category" [level=2]
+    - alert
+    - table "Categories this month":
+      - rowgroup:
+        - row "Category Total Budget Left Spent of budget Actions":
+          - columnheader "Category"
+          - columnheader "Total"
+          - columnheader "Budget"
+          - columnheader "Left"
+          - columnheader "Spent of budget"
+          - columnheader "Actions"
+      - rowgroup:
+        - row /Groceries -\d+\.\d+ \d+\.\d+ \d+\.\d+ \d+% of budget spent Change budget for Groceries/:
+          - cell "Groceries"
+          - cell /-\d+\.\d+/
+          - cell /\d+\.\d+/
+          - cell /\d+\.\d+/
+          - cell /\d+% of budget spent/:
+            - img /\d+% of budget spent/
+          - cell "Change budget for Groceries":
+            - button "Change budget for Groceries"
+        - row /Housing -\d+\.\d+ \d+\.\d+ \d+\.\d+ over \d+% of budget spent Change budget for Housing/:
+          - cell "Housing"
+          - cell /-\d+\.\d+/
+          - cell /\d+\.\d+/
+          - cell /\d+\.\d+ over/
+          - cell /\d+% of budget spent/:
+            - img /\d+% of budget spent/
+          - cell "Change budget for Housing":
+            - button "Change budget for Housing"
+        - row /Salary \d+,\d+\.\d+ Set budget for Salary/:
+          - cell "Salary"
+          - cell /\d+,\d+\.\d+/
+          - cell
+          - cell
+          - cell
+          - cell "Set budget for Salary":
+            - button "Set budget for Salary"
+    - status
+  - region "Transactions this month":
+    - heading "Transactions this month" [level=2]
+    - table "Transactions this month":
+      - rowgroup:
+        - row "Date Payee Category Amount":
+          - columnheader "Date"
+          - columnheader "Payee"
+          - columnheader "Category"
+          - columnheader "Amount"
+      - rowgroup:
+        - row /\d+-\d+-\d+ Farmers Market Groceries -\d+\.\d+/:
+          - cell /\d+-\d+-\d+/
+          - cell "Farmers Market"
+          - cell "Groceries"
+          - cell /-\d+\.\d+/
+        - row /\d+-\d+-\d+ Corner Shop Groceries -\d+\.\d+/:
+          - cell /\d+-\d+-\d+/
+          - cell "Corner Shop"
+          - cell "Groceries"
+          - cell /-\d+\.\d+/
+        - row /\d+-\d+-\d+ Employer Ltd Salary \d+,\d+\.\d+/:
+          - cell /\d+-\d+-\d+/
+          - cell "Employer Ltd"
+          - cell "Salary"
+          - cell /\d+,\d+\.\d+/
+        - row /\d+-\d+-\d+ Landlord Housing -\d+\.\d+/:
+          - cell /\d+-\d+-\d+/
+          - cell "Landlord"
+          - cell "Housing"
+          - cell /-\d+\.\d+/
+- contentinfo:
+  - text: "backend:"
+  - strong: mock
+  - text: "platform: mock / mock"

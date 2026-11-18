@@ -3,6 +3,7 @@
   - navigation "Sections":
     - button "Transactions"
     - button "Import"
+    - button "Categories"
     - button "Settings"
 - main:
   - heading "Import" [level=1]
@@ -58,10 +59,11 @@
     - paragraph: 6 rows will be imported. 0 duplicates will be skipped. 3 rows cannot be read.
     - table "Preview of the first rows":
       - rowgroup:
-        - row "Line Date Payee Amount (USD) Status":
+        - row "Line Date Payee Category Amount (USD) Status":
           - columnheader "Line"
           - columnheader "Date"
           - columnheader "Payee"
+          - columnheader "Category"
           - columnheader "Amount (USD)"
           - columnheader "Status"
       - rowgroup:
@@ -69,36 +71,42 @@
           - cell "2"
           - cell /\d+-\d+-\d+/
           - cell "Landlord, Inc."
+          - cell
           - cell /-\d+\.\d+/
           - cell "New"
         - row /3 \d+-\d+-\d+ Employer Ltd \d+,\d+\.\d+ New/:
           - cell "3"
           - cell /\d+-\d+-\d+/
           - cell "Employer Ltd"
+          - cell
           - cell /\d+,\d+\.\d+/
           - cell "New"
         - row /4 \d+-\d+-\d+ Corner Shop -\d+\.\d+ New/:
           - cell "4"
           - cell /\d+-\d+-\d+/
           - cell "Corner Shop"
+          - cell
           - cell /-\d+\.\d+/
           - cell "New"
         - row /5 \d+-\d+-\d+ Corner Shop -\d+\.\d+ New/:
           - cell "5"
           - cell /\d+-\d+-\d+/
           - cell "Corner Shop"
+          - cell
           - cell /-\d+\.\d+/
           - cell "New"
         - row /6 \d+-\d+-\d+ Farmers "Fresh" Market -\d+\.\d+ New/:
           - cell "6"
           - cell /\d+-\d+-\d+/
           - cell "Farmers \"Fresh\" Market"
+          - cell
           - cell /-\d+\.\d+/
           - cell "New"
         - row /\d+ \d+-\d+-\d+ Multi line payee -\d+\.\d+ New/:
           - cell /\d+/
           - cell /\d+-\d+-\d+/
           - cell "Multi line payee"
+          - cell
           - cell /-\d+\.\d+/
           - cell "New"
     - heading "Rows that cannot be read" [level=3]

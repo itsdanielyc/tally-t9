@@ -2,6 +2,7 @@
 // and the first screen.
 import { backend } from "./api.ts";
 import type { AppContext, Screen, ScreenName } from "./app.ts";
+import { categoriesScreen } from "./screens/categories.ts";
 import { importScreen } from "./screens/import.ts";
 import { settingsScreen } from "./screens/settings.ts";
 import { transactionsScreen } from "./screens/transactions.ts";
@@ -9,6 +10,7 @@ import { transactionsScreen } from "./screens/transactions.ts";
 const screens: Record<ScreenName, Screen> = {
   transactions: transactionsScreen,
   import: importScreen,
+  categories: categoriesScreen,
   settings: settingsScreen,
 };
 

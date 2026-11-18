@@ -195,6 +195,17 @@ button[hidden] { display: none; }
 .card[hidden] { display: none; }
 .actions { display: flex; gap: 8px; }
 
+/* Categories and rules */
+.inline-form { display: flex; gap: 12px; align-items: end; margin-bottom: 4px; }
+.inline-form .field.grow { flex: 1; }
+.inline-form select { width: 200px; }
+.tx-table .col-count { width: 120px; }
+.tx-table .col-cat-actions { width: 340px; text-align: right; }
+.tx-table .col-cat-actions button, .tx-table .col-cat-actions select { height: 26px; margin-left: 4px; font-size: 13px; }
+.tx-table .col-cat-actions select { width: 140px; padding: 0 4px; }
+.tx-table td input { height: 26px; width: 100%; }
+.inline-label { color: var(--muted); font-size: 13px; }
+
 .meta {
   display: flex;
   gap: 24px;

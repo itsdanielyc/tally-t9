@@ -45,3 +45,18 @@ a later design pass may restyle screens and refresh the visual baselines.
   with the file's line number and the reason in words.
 - A summary sentence above the preview gives the three counts (imported,
   skipped, unreadable) so the decision fits in one line.
+
+## Slice 3
+
+- Categories get their own screen with two cards: the categories (with a
+  transaction count each) and the rules. Rename, merge and delete act in
+  the row itself, like delete on the Transactions screen, so the category
+  being changed stays in view.
+- Delete says what it will do before it does it ("leaves 2 transactions
+  uncategorised and removes its rules"); merge names the target in a select
+  next to the row.
+- Rules read as the sentence the brief uses: "Payee contains" text and a
+  category. Applying rules is an explicit button with a count in the
+  status, because it changes many transactions at once.
+- The import preview gains a Category column showing what the rules will
+  give each row before anything is saved.

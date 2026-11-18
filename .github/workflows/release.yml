@@ -1,0 +1,124 @@
+# Tag-driven release for Tally (electron-web). Adapted from the Keel
+# keel-release reference (written for tauri-web): electron-builder instead of
+# tauri build, the three Tier 1 runners from keel.json, unsigned bundles as
+# ADR 001 decides for 0.1.0.
+# On a v* tag: refuse unless the installers workflow passed on the tagged
+# commit (the gate job), then build the bundles on every Tier 1 runner, run
+# the installer round trips again, upload bundles and checksums, and create
+# the release (a pre-release for 0.x) only when every build job passed. Only
+# the formats the installers workflow round-trips are shipped: NSIS, dmg,
+# deb, AppImage.
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  gate:
+    name: installers green on the tagged commit
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Find a successful installers run for this commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          n=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow installers --commit "$GITHUB_SHA" --status success --json databaseId --jq 'length')
+          if [ "${n:-0}" -eq 0 ]; then
+            echo "No green installers run exists for $GITHUB_SHA. Run it on main and tag that commit." >&2
+            exit 1
+          fi
+
+  build:
+    name: build (${{ matrix.os }})
+    needs: [gate]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    env:
+      # Unsigned for 0.1.0 (ADR 001): no certificate lookup, no notarization.
+      CSC_IDENTITY_AUTO_DISCOVERY: "false"
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - name: Linux build and runtime dependencies
+        if: runner.os == 'Linux'
+        timeout-minutes: 10
+        env:
+          DEBIAN_FRONTEND: noninteractive
+          NEEDRESTART_MODE: a
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb libnss3 libatk-bridge2.0-0t64 libgtk-3-0t64 libgbm1 libasound2t64 libfuse2t64
+      - run: npm ci
+      - name: Version check
+        shell: bash
+        run: |
+          v=$(node -p "require('./package.json').version")
+          [ "v$v" = "${GITHUB_REF_NAME}" ] || { echo "tag ${GITHUB_REF_NAME} != package.json v$v"; exit 1; }
+          grep -q "^## \[$v\]" CHANGELOG.md || { echo "CHANGELOG.md has no section for $v"; exit 1; }
+      - name: Build and package (nsis | dmg | deb + AppImage)
+        run: npm run package
+      - name: Installer round trips (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: ./scripts/installer-test.ps1
+      - name: Installer round trips (macOS)
+        if: runner.os == 'macOS'
+        run: bash scripts/installer-test.sh
+      - name: Installer round trips (Linux, under xvfb-run)
+        if: runner.os == 'Linux'
+        env:
+          NO_AT_BRIDGE: "1"
+        run: xvfb-run -a --server-args="-screen 0 1280x1024x24" bash scripts/installer-test.sh
+      - name: Checksums
+        shell: bash
+        run: |
+          mkdir -p dist-release
+          find release -maxdepth 1 -type f \( -name '*.exe' -o -name '*.dmg' -o -name '*.deb' -o -name '*.AppImage' \) -exec cp {} dist-release/ \;
+          # Write the checksum file outside the folder it lists, so it never lists itself.
+          (cd dist-release && sha256sum * > "../SHA256SUMS-${{ matrix.os }}.txt")
+          mv "SHA256SUMS-${{ matrix.os }}.txt" dist-release/
+      - uses: actions/upload-artifact@v7
+        with:
+          name: bundles-${{ matrix.os }}
+          path: dist-release
+          retention-days: 7
+
+  publish:
+    name: publish
+    needs: [build]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: bundles-*
+          path: assets
+          merge-multiple: true
+      - name: Release notes (changelog section and signing status)
+        shell: bash
+        run: |
+          v="${GITHUB_REF_NAME#v}"
+          awk -v v="$v" '/^## /{p=index($0,"["v"]")>0} p' CHANGELOG.md > notes.md || true
+          [ -s notes.md ] || { echo "CHANGELOG.md has no section for $v" >&2; exit 1; }
+          if [ -f "docs/release-notes/$v.md" ]; then printf '\n' >> notes.md; cat "docs/release-notes/$v.md" >> notes.md; fi
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          pre=""; case "${GITHUB_REF_NAME}" in v0.*) pre="--prerelease";; esac
+          gh release create "${GITHUB_REF_NAME}" assets/* --title "Tally ${GITHUB_REF_NAME}" --notes-file notes.md $pre

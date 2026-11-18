@@ -14,8 +14,9 @@ windows-latest, macos-latest (arm64). No Tier 2 or Tier 3.
 | L6 | Playwright Electron, `tests/e2e/`, built app in a temp `TALLY_DATA_DIR` | `npm run build && npm run test:e2e` | every PR, 3 OS runners |
 | L7 | installer round trips (NSIS, dmg, deb, AppImage) | `installers` workflow | main, release, on demand |
 
-`test:contract` and `test:integration` are added in slice 1 (with
-`keel.json`); until then Vitest runs `tests/unit/` only.
+Pixel baselines come only from the `snapshots` workflow (each runner
+uploads its own images); `TALLY_UI_PORT` moves the browser suite off port
+1420 on a machine shared with other projects.
 
 ## Critical journeys
 

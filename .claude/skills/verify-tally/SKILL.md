@@ -38,6 +38,10 @@ Read cold, mid-task. Every command below is real for this repository.
   `TALLY_DATA_DIR` set to a temp directory, records, edits and deletes
   transactions through the UI, relaunches the app and checks the list and
   the file on disk; add journeys under `tests/e2e/`.
+- File dialogs cannot be driven by any test tool: an unpackaged build
+  answers the open dialog with `TALLY_TEST_IMPORT_FILE=<path>` instead
+  (`tests/e2e/import.spec.ts` does this with a fixture from
+  `tests/fixtures/csv/`).
 - The bridge directly, from a Playwright `win.evaluate`:
   `window.electronBridge.listTransactions()`; the method list is
   `contracts/methods.ts`.

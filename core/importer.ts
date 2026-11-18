@@ -8,8 +8,10 @@ import type {
   ImportInspection,
   ImportMapping,
   ImportRejection,
+  Rule,
   Transaction,
 } from "../contracts/ledger.ts";
+import { categoryFor } from "./categories.ts";
 import { parseCsv, detectDelimiter, type CsvRecord } from "./csv.ts";
 import { isValidParts, toIsoDate } from "./dates.ts";
 import { parseDecimal } from "./money.ts";
@@ -232,15 +234,16 @@ function orderLabel(order: DateOrder): string {
   return order === "YMD" ? "year-month-day" : order === "DMY" ? "day-month-year" : "month-day-year";
 }
 
-export type ReadResult = { rows: (ReadRow & { duplicate: boolean })[]; rejected: ImportRejection[] };
+export type ReadResult = { rows: (ReadRow & { duplicate: boolean; categoryId: string | null })[]; rejected: ImportRejection[] };
 
 /**
  * Reads every data row and marks duplicates: a row identical in date,
  * amount and payee to a transaction already in the ledger is a duplicate,
  * counted as a multiset, so two identical rows in one file both import the
- * first time and both are duplicates the second time.
+ * first time and both are duplicates the second time. Rules give each row
+ * its category.
  */
-export function readAll(text: string, mapping: ImportMapping, existing: readonly Transaction[]): ReadResult {
+export function readAll(text: string, mapping: ImportMapping, existing: readonly Transaction[], rules: readonly Rule[] = []): ReadResult {
   const records = parseCsv(text, mapping.delimiter);
   const data = records.slice(mapping.hasHeader ? 1 : 0);
   const available = new Map<string, number>();
@@ -259,7 +262,7 @@ export function readAll(text: string, mapping: ImportMapping, existing: readonly
     const k = duplicateKey(r.row.date, r.row.amount, r.row.payee);
     const left = available.get(k) ?? 0;
     if (left > 0) available.set(k, left - 1);
-    rows.push({ ...r.row, duplicate: left > 0 });
+    rows.push({ ...r.row, duplicate: left > 0, categoryId: categoryFor(r.row.payee, rules) });
   }
   return { rows, rejected };
 }

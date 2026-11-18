@@ -26,7 +26,7 @@ describe("import through the service", () => {
     expect(p.value.accepted).toBe(6);
     expect(p.value.duplicates).toBe(0);
     expect(p.value.rejected.map((r) => r.line)).toEqual([7, 8, 9]);
-    expect(p.value.rows[0]).toEqual({ line: 2, date: "2026-03-01", payee: "Landlord, Inc.", amount: -95000, status: "new" });
+    expect(p.value.rows[0]).toEqual({ line: 2, date: "2026-03-01", payee: "Landlord, Inc.", amount: -95000, status: "new", categoryId: null });
     expect(p.value.rows.length).toBeLessThanOrEqual(PREVIEW_ROWS);
     // Previewing saves nothing.
     expect(s.listTransactions()).toEqual([]);

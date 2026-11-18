@@ -1,0 +1,125 @@
+- banner:
+  - text: Tally
+  - navigation "Sections":
+    - button "Transactions"
+    - button "Import"
+    - button "Settings"
+- main:
+  - heading "Import" [level=1]
+  - region "1. Choose a file":
+    - heading "1. Choose a file" [level=2]
+    - paragraph: Download a CSV export from your bank's website and choose it here. Nothing is added until you confirm.
+    - button "Choose CSV file…"
+    - paragraph: "us-comma.csv: 9 rows"
+    - status
+  - region "2. Match the columns":
+    - heading "2. Match the columns" [level=2]
+    - text: Delimiter
+    - combobox "Delimiter":
+      - option "Comma ( , )" [selected]
+      - option "Semicolon ( ; )"
+      - option "Tab"
+      - option "Pipe ( | )"
+    - text: Header
+    - checkbox "First row is a header" [checked]
+    - text: First row is a header Date column
+    - combobox "Date column":
+      - option "Date" [selected]
+      - option "Description"
+      - option "Amount"
+    - text: Date order
+    - combobox "Date order":
+      - option /Year-month-day \(\d+-\d+-\d+\)/
+      - option /Day-month-year \(\d+\.\d+\.\d+\)/
+      - option /Month-day-year \(\d+\/\d+\/\d+\)/ [selected]
+    - text: Payee column
+    - combobox "Payee column":
+      - option "Date"
+      - option "Description" [selected]
+      - option "Amount"
+    - text: Decimal separator
+    - combobox "Decimal separator":
+      - option /Point \(\d+,\d+\.\d+\)/ [selected]
+      - option /Comma \(\d+\.\d+,\d+\)/
+    - radiogroup "Amounts":
+      - text: ""
+      - radio "One column, negative is spending" [checked]
+      - text: One column, negative is spending
+      - radio "Separate debit and credit columns"
+      - text: Separate debit and credit columns
+    - text: Amount column
+    - combobox "Amount column":
+      - option "Date"
+      - option "Description"
+      - option "Amount" [selected]
+  - region "3. Check and import":
+    - heading "3. Check and import" [level=2]
+    - alert
+    - paragraph: 6 rows will be imported. 0 duplicates will be skipped. 3 rows cannot be read.
+    - table "Preview of the first rows":
+      - rowgroup:
+        - row "Line Date Payee Amount (USD) Status":
+          - columnheader "Line"
+          - columnheader "Date"
+          - columnheader "Payee"
+          - columnheader "Amount (USD)"
+          - columnheader "Status"
+      - rowgroup:
+        - row /2 \d+-\d+-\d+ Landlord, Inc\. -\d+\.\d+ New/:
+          - cell "2"
+          - cell /\d+-\d+-\d+/
+          - cell "Landlord, Inc."
+          - cell /-\d+\.\d+/
+          - cell "New"
+        - row /3 \d+-\d+-\d+ Employer Ltd \d+,\d+\.\d+ New/:
+          - cell "3"
+          - cell /\d+-\d+-\d+/
+          - cell "Employer Ltd"
+          - cell /\d+,\d+\.\d+/
+          - cell "New"
+        - row /4 \d+-\d+-\d+ Corner Shop -\d+\.\d+ New/:
+          - cell "4"
+          - cell /\d+-\d+-\d+/
+          - cell "Corner Shop"
+          - cell /-\d+\.\d+/
+          - cell "New"
+        - row /5 \d+-\d+-\d+ Corner Shop -\d+\.\d+ New/:
+          - cell "5"
+          - cell /\d+-\d+-\d+/
+          - cell "Corner Shop"
+          - cell /-\d+\.\d+/
+          - cell "New"
+        - row /6 \d+-\d+-\d+ Farmers "Fresh" Market -\d+\.\d+ New/:
+          - cell "6"
+          - cell /\d+-\d+-\d+/
+          - cell "Farmers \"Fresh\" Market"
+          - cell /-\d+\.\d+/
+          - cell "New"
+        - row /\d+ \d+-\d+-\d+ Multi line payee -\d+\.\d+ New/:
+          - cell /\d+/
+          - cell /\d+-\d+-\d+/
+          - cell "Multi line payee"
+          - cell /-\d+\.\d+/
+          - cell "New"
+    - heading "Rows that cannot be read" [level=3]
+    - table "Rows that cannot be read":
+      - rowgroup:
+        - row "Line Reason":
+          - columnheader "Line"
+          - columnheader "Reason"
+      - rowgroup:
+        - row /7 date "\d+\/\d+\/\d+" is not a valid month-day-year date/:
+          - cell "7"
+          - cell /date "\d+\/\d+\/\d+" is not a valid month-day-year date/
+        - row "8 payee is empty":
+          - cell "8"
+          - cell "payee is empty"
+        - row "9 amount \"twelve\" is not a number with \".\" as the decimal separator":
+          - cell "9"
+          - cell "amount \"twelve\" is not a number with \".\" as the decimal separator"
+    - button "Import 6 transactions"
+    - button "Cancel"
+- contentinfo:
+  - text: "backend:"
+  - strong: mock
+  - text: "platform: mock / mock"

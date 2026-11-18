@@ -2,7 +2,7 @@
 // screen gets (the backend and the current ledger view).
 import type { Backend, LedgerView } from "./api.ts";
 
-export type ScreenName = "transactions" | "settings";
+export type ScreenName = "transactions" | "import" | "settings";
 
 export type AppContext = {
   readonly backend: Backend;

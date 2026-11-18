@@ -21,11 +21,15 @@ is never rounded up to "tested"; anything not listed here is unverified.
 | 2026-11-18 | L5 tier 2 (finding) | the Find card's labels wrapped to two lines on Linux and moved the list 16 px, beyond the 8 px tolerance; the Type labels were clipped on Linux (seen on the runner screenshots); both layouts now use font-independent widths | ubuntu-latest | same run: ui (ubuntu-latest) failed "transactions screen visuals › tier 2"; fixed in 9ec2650 and 5809625 |
 | 2026-11-18 | snapshots workflow (finding) | a recapture kept only the Windows images: the merge let the last capture set overwrite the other runners' fresh images with stale copies; each runner now uploads only its own images | ubuntu-latest, windows-latest, macos-latest | snapshots [run 44370736389](https://github.com/itsdanielyc/tally-t9/actions/runs/44370736389): only win32 changed in its commit; fixed in 551e511, Linux and macOS images taken from that run's own artifacts in c4b97c3 |
 | 2026-11-18 | L0, L1, L2, L3, L4, L5 tiers 1-3, L6 | the whole stack (slices 1 to 5 with every suite): type-check, unit, contract, integration (file store, crash and kill tests, 2,000-row import, export round trip) on every OS, browser suite with ARIA, geometry and per-OS pixels for all five screens, and every real-shell journey (record and relaunch, import, categories and rules, budget, undo, export into a second app) | ubuntu-latest, windows-latest, macos-latest | PR #12 [run 44373011782](https://github.com/itsdanielyc/tally-t9/actions/runs/44373011782) on c899b58: unit, ui x3, e2e x3, contact sheet all green; real-shell screenshots looked at for darwin-arm64 and linux-x64 |
+| 2026-11-18 | L0 to L6, tiers 1-3 | the merged release candidate: every suite, as on the stack head | ubuntu-latest, windows-latest, macos-latest | main [run 44378374534](https://github.com/itsdanielyc/tally-t9/actions/runs/44378374534) on 484a3a4: unit, ui x3, e2e x3, contact sheet green |
+| 2026-11-18 | L7 installers | NSIS silent install, launch, silent uninstall (Windows); dmg mount, copy to Applications, launch, remove (macOS arm64); deb install, launch, remove and AppImage launch (Linux) of the 0.1.0 bundles built from the release candidate | windows-latest, macos-latest, ubuntu-latest | main installers [run 44378374531](https://github.com/itsdanielyc/tally-t9/actions/runs/44378374531) on 484a3a4, 3 of 3 green |
+| 2026-11-18 | release | 0.1.0 is ready to tag: version, CHANGELOG, release notes with the signing status, release workflow gated on installers; the tag and the GitHub release are not created | none (no run) | PR #13 merged as 484a3a4; the release workflow has not run |
 
 ## Unverified
 
-- L7 on macOS: the installers job has not yet been acquired by a macOS
-  runner (capacity); Windows and Linux round trips are green (scaffold).
+- The release workflow (gate, builds, round trips, checksums, publish):
+  it runs only on a `v*` tag, which was not created.
+- Signed or notarized bundles: 0.1.0 is unsigned (ADR 001).
 - Pixel tier 3 for the intermediate screens of slices 1 to 4 (only the
   shipped screens have baselines, by ruling in PLAN.md).
 - Per-slice macOS runs: slices 1 to 5 were proven on macOS by the stack
@@ -33,5 +37,5 @@ is never rounded up to "tested"; anything not listed here is unverified.
 - Local only, not seen on a runner: on the build machine (Windows 11
   build 26300) the Playwright worker sometimes exited with 0xC0000409
   during the full L6 suite; every runner run of the suite was clean.
-- Screen readers, keyboard-only use, signed bundles, Tier 2 and Tier 3
+- Screen readers, keyboard-only use, Tier 2 and Tier 3
   platforms: out of scope for 0.1.0 (TESTING.md).

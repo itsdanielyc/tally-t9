@@ -19,6 +19,8 @@ export type LedgerData = {
   categories: Category[];
   /** added in slice 3; a file without it opens with none */
   rules: Rule[];
+  /** added in slice 4: monthly budget per category id; a file without it opens with none */
+  budgets: Record<string, number>;
   /** the next number used to make an id ("t12", "c3", "r4") */
   nextId: number;
 };
@@ -31,6 +33,7 @@ export function emptyLedger(): LedgerData {
     transactions: [],
     categories: [],
     rules: [],
+    budgets: {},
     nextId: 1,
   };
 }
@@ -115,6 +118,14 @@ export function parseLedger(raw: unknown): ParseResult {
     if (categoryIds.has(r.categoryId)) rules.push({ id: r.id, contains: r.contains, categoryId: r.categoryId });
   }
 
+  if (raw.budgets !== undefined && !isObject(raw.budgets)) return fail("budgets are not an object");
+  const budgets: Record<string, number> = {};
+  for (const [id, amount] of Object.entries(raw.budgets ?? {})) {
+    if (!isValidMinor(amount) || amount <= 0) return fail(`the budget for ${id} is not a positive whole number of minor units`);
+    // A budget whose category is gone is dropped rather than refusing the file.
+    if (categoryIds.has(id)) budgets[id] = amount;
+  }
+
   const nextId = typeof raw.nextId === "number" && Number.isSafeInteger(raw.nextId) && raw.nextId > 0 ? raw.nextId : 1;
   const data: LedgerData = {
     format: FORMAT,
@@ -123,6 +134,7 @@ export function parseLedger(raw: unknown): ParseResult {
     transactions,
     categories,
     rules,
+    budgets,
     // Never hand out an id that is already in use, whatever nextId says.
     nextId: Math.max(nextId, maxIdNumber([...ids, ...categoryIds, ...ruleIds]) + 1),
   };

@@ -17,7 +17,10 @@ import { CURRENCIES } from "../contracts/ledger.ts";
 import { categoryFor, checkCategoryName, checkRuleText } from "./categories.ts";
 import { DELIMITERS } from "./csv.ts";
 import { inspect, MAX_IMPORT_CHARS, mappingProblem, readAll, widthOf } from "./importer.ts";
+import { isValidMonth } from "./dates.ts";
+import { isValidMinor } from "./money.ts";
 import { emptyLedger, type LedgerData } from "./schema.ts";
+import { summarise } from "./summary.ts";
 import { cleanText, newestFirst, validateDraft, type CleanDraft } from "./transactions.ts";
 
 export type LoadResult = { data: LedgerData; recovered: string | null };
@@ -121,6 +124,7 @@ export function createLedgerService(store: LedgerStore): LedgerService {
         settings: { ...data.settings },
         categories: [...data.categories].sort((a, b) => a.name.localeCompare(b.name, "en", { sensitivity: "base" })),
         rules: structuredClone(data.rules),
+        budgets: { ...data.budgets },
         transactionCount: data.transactions.length,
         storage: { ...store.describe(), recovered },
       };
@@ -234,6 +238,7 @@ export function createLedgerService(store: LedgerStore): LedgerService {
       }
       next.categories = next.categories.filter((c) => c.id !== target.id);
       next.rules = next.rules.filter((r) => r.categoryId !== target.id);
+      delete next.budgets[target.id];
       return commit(next, { uncategorised });
     },
 
@@ -252,6 +257,8 @@ export function createLedgerService(store: LedgerStore): LedgerService {
       }
       for (const r of next.rules) if (r.categoryId === source.id) r.categoryId = target.id;
       next.categories = next.categories.filter((c) => c.id !== source.id);
+      // The target keeps its own budget; the source's goes with it.
+      delete next.budgets[source.id];
       return commit(next, { moved });
     },
 
@@ -289,6 +296,23 @@ export function createLedgerService(store: LedgerStore): LedgerService {
         }
       }
       return categorised === 0 ? ok({ categorised }) : commit(next, { categorised });
+    },
+
+    monthSummary(month) {
+      if (!isValidMonth(month)) return err("invalid", "Choose a month (YYYY-MM).", "month");
+      return ok(summarise(month, data.transactions, data.categories, data.budgets));
+    },
+
+    setBudget(categoryId, amount) {
+      const category = data.categories.find((c) => c.id === String(categoryId));
+      if (!category) return err("not_found", "That category no longer exists.");
+      if (amount !== null && (!isValidMinor(amount) || amount < 0)) {
+        return err("invalid", "Enter a budget as a positive amount.", "amount");
+      }
+      const next = copy();
+      if (amount === null || amount === 0) delete next.budgets[category.id];
+      else next.budgets[category.id] = amount;
+      return commit(next, { categoryId: category.id, amount: next.budgets[category.id] ?? null });
     },
 
     setCurrency(currency) {

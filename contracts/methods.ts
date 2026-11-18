@@ -20,6 +20,8 @@ export const ledgerMethods = [
   "createRule",
   "deleteRule",
   "applyRules",
+  "monthSummary",
+  "setBudget",
 ] as const satisfies readonly (keyof LedgerApi)[];
 
 export const platformMethods = ["platformInfo", "chooseImportFile"] as const satisfies readonly (keyof PlatformApi)[];

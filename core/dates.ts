@@ -45,3 +45,17 @@ export function localToday(now: Date = new Date()): string {
 export function monthOf(date: string): string {
   return date.slice(0, 7);
 }
+
+/** "2026-12" plus 1 is "2027-01"; minus 1 from "2026-01" is "2025-12". */
+export function addMonths(month: string, delta: number): string {
+  if (!isValidMonth(month)) throw new RangeError(`not a month: ${month}`);
+  const index = Number(month.slice(0, 4)) * 12 + (Number(month.slice(5, 7)) - 1) + delta;
+  return `${String(Math.floor(index / 12)).padStart(4, "0")}-${String((index % 12) + 1).padStart(2, "0")}`;
+}
+
+const MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+/** "2026-03" is "March 2026", the same in every locale. */
+export function monthLabel(month: string): string {
+  return `${MONTH_NAMES[Number(month.slice(5, 7)) - 1]} ${month.slice(0, 4)}`;
+}

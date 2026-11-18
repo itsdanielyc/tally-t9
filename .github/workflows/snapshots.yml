@@ -46,10 +46,24 @@ jobs:
         env:
           CI: "1"
         run: npm run test:ui:update
+      # Upload only this runner's own pixel baselines (plus the shared ARIA
+      # and geometry files). Uploading the whole folder let the last set
+      # merged below overwrite the other runners' fresh images with the stale
+      # copies from its own checkout, so a recapture kept only the Windows
+      # images (found on run 44370736389).
+      - name: Keep this runner's baselines only
+        shell: bash
+        run: |
+          case "$RUNNER_OS" in Windows) p=win32;; macOS) p=darwin;; *) p=linux;; esac
+          mkdir -p captured
+          # Portable on BSD (macOS) and GNU cp: no --parents.
+          (cd tests/ui/__snapshots__ && find . -type f \( -name "*-$p.png" -o -name "*.aria.yml" -o -name "*.geometry.json" \) |
+            while read -r f; do mkdir -p "../../../captured/$(dirname "$f")"; cp "$f" "../../../captured/$f"; done)
+          find captured -type f | sort
       - uses: actions/upload-artifact@v7
         with:
           name: snapshots-${{ matrix.os }}
-          path: tests/ui/__snapshots__
+          path: captured
           retention-days: 3
 
   propose:

@@ -1,0 +1,76 @@
+- banner:
+  - text: Tally
+  - navigation "Sections":
+    - button "Transactions"
+    - button "Import"
+    - button "Categories"
+    - button "Settings"
+- main:
+  - heading "Categories" [level=1]
+  - region "Categories":
+    - heading "Categories" [level=2]
+    - form "New category":
+      - text: New category name
+      - textbox "New category name"
+      - button "Add category"
+    - alert
+    - status
+    - table "Categories":
+      - rowgroup:
+        - row "Name Transactions Actions":
+          - columnheader "Name"
+          - columnheader "Transactions"
+          - columnheader "Actions"
+      - rowgroup:
+        - row "Groceries 2 Rename Groceries Merge Groceries Delete Groceries":
+          - cell "Groceries"
+          - cell "2"
+          - cell "Rename Groceries Merge Groceries Delete Groceries":
+            - button "Rename Groceries"
+            - button "Merge Groceries": Merge…
+            - button "Delete Groceries"
+        - row "Housing 1 Rename Housing Merge Housing Delete Housing":
+          - cell "Housing"
+          - cell "1"
+          - cell "Rename Housing Merge Housing Delete Housing":
+            - button "Rename Housing"
+            - button "Merge Housing": Merge…
+            - button "Delete Housing"
+        - row "Salary 1 Rename Salary Merge Salary Delete Salary":
+          - cell "Salary"
+          - cell "1"
+          - cell "Rename Salary Merge Salary Delete Salary":
+            - button "Rename Salary"
+            - button "Merge Salary": Merge…
+            - button "Delete Salary"
+  - region "Rules":
+    - heading "Rules" [level=2]
+    - paragraph: A rule gives a category to imported rows whose payee contains its text. When several match, the first rule wins.
+    - form "New rule":
+      - text: Payee contains
+      - textbox "Payee contains"
+      - text: Category
+      - combobox "Category":
+        - option "Groceries" [selected]
+        - option "Housing"
+        - option "Salary"
+      - button "Add rule"
+    - alert
+    - table "Rules":
+      - rowgroup:
+        - row "Payee contains Category Actions":
+          - columnheader "Payee contains"
+          - columnheader "Category"
+          - columnheader "Actions"
+      - rowgroup:
+        - row "utility Housing Delete rule utility":
+          - cell "utility"
+          - cell "Housing"
+          - cell "Delete rule utility":
+            - button "Delete rule utility"
+    - button "Apply rules to uncategorised transactions"
+    - status
+- contentinfo:
+  - text: "backend:"
+  - strong: mock
+  - text: "platform: mock / mock"

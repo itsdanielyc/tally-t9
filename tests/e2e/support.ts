@@ -52,7 +52,7 @@ export class Tally {
   }
 
   /** Clicks a section in the top navigation. */
-  async go(section: "Transactions" | "Import" | "Settings"): Promise<void> {
+  async go(section: "Transactions" | "Import" | "Categories" | "Settings"): Promise<void> {
     await this.win.getByRole("navigation", { name: "Sections" }).getByRole("button", { name: section }).click();
   }
 }

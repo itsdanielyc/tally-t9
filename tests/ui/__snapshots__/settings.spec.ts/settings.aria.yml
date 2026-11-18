@@ -3,6 +3,7 @@
   - navigation "Sections":
     - button "Transactions"
     - button "Import"
+    - button "Categories"
     - button "Settings"
 - main:
   - heading "Settings" [level=1]

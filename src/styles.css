@@ -169,6 +169,32 @@ button[hidden] { display: none; }
 .empty { color: var(--muted); }
 .empty[hidden] { display: none; }
 
+/* Import */
+.hint.first { margin: 0 0 12px; }
+.file-row { display: flex; align-items: center; gap: 12px; }
+.file-name { margin: 0; color: var(--muted); overflow-wrap: anywhere; }
+.map-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px 16px;
+  align-items: end;
+}
+.map-grid select { width: 100%; }
+.map-grid .check label { display: inline-flex; align-items: center; gap: 6px; height: 32px; font-size: 14px; color: var(--text); }
+.map-grid .amount-kind { grid-column: 1 / -1; }
+.map-grid .radios { display: flex; gap: 16px; height: 32px; align-items: center; }
+.map-grid .radios label { display: inline-flex; align-items: center; gap: 4px; font-size: 14px; color: var(--text); }
+.summary { margin: 0 0 12px; font-weight: 600; }
+.preview { margin-bottom: 12px; }
+.tx-table .col-line { width: 64px; font-variant-numeric: tabular-nums; }
+.tx-table .col-status { width: 170px; }
+.tx-table tr.duplicate td { color: var(--muted); }
+.tx-table .reason { white-space: normal; }
+.rejected h3 { font-size: 13px; margin: 0 0 8px; }
+.rejected { margin-bottom: 12px; }
+.card[hidden] { display: none; }
+.actions { display: flex; gap: 8px; }
+
 .meta {
   display: flex;
   gap: 24px;

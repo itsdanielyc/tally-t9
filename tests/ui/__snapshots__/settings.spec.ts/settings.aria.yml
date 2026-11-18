@@ -2,6 +2,7 @@
   - text: Tally
   - navigation "Sections":
     - button "Transactions"
+    - button "Import"
     - button "Settings"
 - main:
   - heading "Settings" [level=1]

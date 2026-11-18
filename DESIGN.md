@@ -29,3 +29,19 @@ a later design pass may restyle screens and refresh the visual baselines.
   is marked `aria-invalid` and focused.
 - Each row's buttons are named after the row ("Edit Corner Shop on
   2026-03-09") so a screen reader and the tests can tell them apart.
+
+## Slice 2
+
+- Import is a three-card page, numbered in the order the person works:
+  choose a file, match the columns, check and import. Nothing is saved
+  until the "Import N transactions" button, whose label is the count.
+- Every mapping control is a plain select or radio with its own label, all
+  filled in from detection, so a well-formed export needs only one click.
+- Changing the delimiter re-reads the file and re-guesses the columns;
+  switching the header keeps the person's column choices.
+- The preview shows the first ten readable rows exactly as they will be
+  stored (ISO date, signed amount) with a status column; duplicates are
+  greyed and say "Duplicate, skipped". Unreadable rows get their own table
+  with the file's line number and the reason in words.
+- A summary sentence above the preview gives the three counts (imported,
+  skipped, unreadable) so the decision fits in one line.

@@ -4,11 +4,16 @@
 // preload and main cannot disagree about which methods exist.
 //
 // Test-only bypasses, honoured only when the app is not packaged:
-//   TALLY_DATA_DIR  the directory that holds ledger.json (the L6 suite uses a temp dir)
-import { app, BrowserWindow, dialog, ipcMain, shell, type IpcMainInvokeEvent } from "electron";
-import { join } from "node:path";
-import type { PlatformInfo } from "../contracts/ledger.ts";
-import { channelFor, ledgerMethods } from "../contracts/methods.ts";
+//   TALLY_DATA_DIR          the directory that holds ledger.json (the L6 suite uses a temp dir)
+//   TALLY_TEST_IMPORT_FILE  the file the open dialog answers with, because no
+//                           test driver can see a native file dialog
+import { app, BrowserWindow, dialog, ipcMain, shell, type IpcMainInvokeEvent, type OpenDialogOptions } from "electron";
+import { readFileSync, statSync } from "node:fs";
+import { basename, join } from "node:path";
+import type { ImportFile, PlatformApi, PlatformInfo, Result } from "../contracts/ledger.ts";
+import { channelFor, ledgerMethods, platformMethods, type PlatformMethod } from "../contracts/methods.ts";
+import { decodeCsvBytes } from "../core/csv.ts";
+import { MAX_IMPORT_CHARS } from "../core/importer.ts";
 import { createLedgerService, type LedgerService } from "../core/service.ts";
 import { createFileStore } from "./store.ts";
 
@@ -28,6 +33,41 @@ function platformInfo(): PlatformInfo {
 
 const devUrl = !app.isPackaged ? process.env.ELECTRON_RENDERER_URL : undefined;
 
+function testOnly(name: string): string | undefined {
+  return app.isPackaged ? undefined : process.env[name] || undefined;
+}
+
+async function chooseImportFile(win: BrowserWindow | null): Promise<Result<ImportFile | null>> {
+  let path = testOnly("TALLY_TEST_IMPORT_FILE");
+  if (!path) {
+    const options: OpenDialogOptions = {
+      title: "Import a bank CSV",
+      properties: ["openFile"],
+      filters: [
+        { name: "CSV files", extensions: ["csv", "txt"] },
+        { name: "All files", extensions: ["*"] },
+      ],
+    };
+    const picked = win ? await dialog.showOpenDialog(win, options) : await dialog.showOpenDialog(options);
+    if (picked.canceled || picked.filePaths.length === 0) return { ok: true, value: null };
+    path = picked.filePaths[0];
+  }
+  try {
+    if (statSync(path).size > MAX_IMPORT_CHARS) {
+      return { ok: false, error: { code: "invalid", message: `${basename(path)} is too large to import (over 20 MB).` } };
+    }
+    return { ok: true, value: { name: basename(path), text: decodeCsvBytes(readFileSync(path)) } };
+  } catch (e) {
+    return { ok: false, error: { code: "io", message: `${basename(path)} could not be read: ${(e as Error).message}` } };
+  }
+}
+
+/** One handler per platform method; the type makes a missing one a compile error. */
+const platform: { [K in PlatformMethod]: (event: IpcMainInvokeEvent) => ReturnType<PlatformApi[K]> } = {
+  platformInfo: async () => platformInfo(),
+  chooseImportFile: (event) => chooseImportFile(BrowserWindow.fromWebContents(event.sender)),
+};
+
 /** Only the app's own page may call the backend. */
 function trusted(event: IpcMainInvokeEvent): boolean {
   const url = event.senderFrame?.url ?? "";
@@ -42,7 +82,12 @@ function registerHandlers(service: LedgerService): void {
       return call(...args);
     });
   }
-  ipcMain.handle(channelFor("platformInfo"), () => platformInfo());
+  for (const method of platformMethods) {
+    ipcMain.handle(channelFor(method), (event) => {
+      if (!trusted(event)) throw new Error("Refused a call from an untrusted page.");
+      return platform[method](event);
+    });
+  }
 }
 
 function createWindow(): void {

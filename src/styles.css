@@ -227,9 +227,17 @@ button[hidden] { display: none; }
 
 /* Find and export */
 .card.find { padding: 12px 16px; }
-.find-form { display: grid; grid-template-columns: 1fr 160px 140px 140px 100px 100px auto; gap: 8px; align-items: end; }
-.find-form select { width: 100%; }
-.find-form input { width: 100%; min-width: 0; }
+/* Fixed widths and one-line labels, so the card wraps the same way on every
+   OS's fonts (tier 2 caught Linux wrapping the labels onto two lines). */
+.find-form { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: end; }
+.find-form .field { flex: 0 0 auto; }
+.find-form .field.grow { flex: 1 1 260px; }
+.find-form .field > label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.find-form select { width: 170px; }
+.find-form input[type="date"] { width: 150px; }
+.find-form .field.small input { width: 130px; }
+.find-form .field.grow input { width: 100%; min-width: 0; }
+.find-form .break { flex-basis: 100%; height: 0; }
 .list-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
 .count { margin: 0; color: var(--muted); }
 .undo-bar {

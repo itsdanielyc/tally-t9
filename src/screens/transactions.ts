@@ -90,6 +90,7 @@ export const transactionsScreen: Screen = async (root, ctx) => {
     h("div", { class: "field" }, h("label", { for: "find-category" }, "Show category"), findCategory),
     h("div", { class: "field" }, h("label", { for: "find-from" }, "From"), findFrom),
     h("div", { class: "field" }, h("label", { for: "find-to" }, "To"), findTo),
+    h("div", { class: "break", "aria-hidden": "true" }),
     h("div", { class: "field small" }, h("label", { for: "find-min" }, "Smallest amount"), findMin),
     h("div", { class: "field small" }, h("label", { for: "find-max" }, "Largest amount"), findMax),
     h("div", { class: "actions" }, h("button", { type: "button", onclick: () => clearFilters() }, "Clear filters")),

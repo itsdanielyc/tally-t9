@@ -64,12 +64,14 @@ export function parseDecimal(input: string, decimal: "." | "," = ".", digits = 2
 }
 
 /**
- * The transaction form's amount: a positive number typed with "." or ","
- * as the decimal separator ("12.50", "12,50", "1,234.56").
+ * The transaction form's amount, typed with "." or "," as the decimal
+ * separator ("12.50", "12,50", "1,234.56"). A comma is read as the decimal
+ * separator only when there is no dot, so "12.345" is an error rather than
+ * twelve thousand.
  */
 export function parseFormAmount(input: string, digits = 2): ParsedAmount {
   const dot = parseDecimal(input, ".", digits);
-  if (dot.ok) return dot;
+  if (dot.ok || String(input).includes(".")) return dot;
   const comma = parseDecimal(input, ",", digits);
   return comma.ok ? comma : dot;
 }

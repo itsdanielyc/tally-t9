@@ -80,6 +80,12 @@ describe("parseFormAmount", () => {
     expect(parseFormAmount("1,234.5")).toEqual({ ok: true, minor: 123450 });
   });
 
+  it("never reads a dot as grouping: 12.345 is an error, not twelve thousand", () => {
+    const r = parseFormAmount("12.345");
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.reason).toContain("more than 2 decimal places");
+  });
+
   it("explains a bad amount", () => {
     const r = parseFormAmount("twelve");
     expect(r.ok).toBe(false);

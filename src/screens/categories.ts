@@ -72,7 +72,7 @@ export const categoriesScreen: Screen = async (root, ctx) => {
       ruleError,
       ruleTable,
       ruleEmpty,
-      h("div", { class: "actions" }, h("button", { type: "button", onclick: () => void apply() }, "Apply rules to uncategorised transactions")),
+      h("div", { class: "actions spaced" }, h("button", { type: "button", onclick: () => void apply() }, "Apply rules to uncategorised transactions")),
       ruleStatus,
     ),
   );

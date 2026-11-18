@@ -19,6 +19,10 @@ export type MockHooks = {
   seed?: unknown;
   /** what the open-file dialog answers, first in first out; empty means the person cancelled */
   files?: ImportFile[];
+  /** set to true to make the next save dialog answer "cancelled" */
+  cancelSave?: boolean;
+  /** every file the mock "saved", newest last, for tests to read */
+  exports?: { name: string; text: string }[];
 };
 
 export function createMockBackend(seed?: LedgerData, hooks: () => MockHooks | undefined = () => undefined): Backend {
@@ -27,6 +31,15 @@ export function createMockBackend(seed?: LedgerData, hooks: () => MockHooks | un
     kind: "mock",
     platformInfo: async () => ({ os: "mock", arch: "mock", electron: "mock", packaged: false }),
     chooseImportFile: async () => ({ ok: true, value: structuredClone(hooks()?.files?.shift() ?? null) }),
+    saveExportFile: async (text: string, suggestedName: string) => {
+      const h = hooks();
+      if (h?.cancelSave) {
+        h.cancelSave = false;
+        return { ok: true, value: null };
+      }
+      if (h) (h.exports ??= []).push({ name: suggestedName, text });
+      return { ok: true, value: { path: `mock:${suggestedName}` } };
+    },
   };
   for (const method of ledgerMethods) {
     const call = service[method] as (...args: unknown[]) => unknown;

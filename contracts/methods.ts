@@ -22,9 +22,11 @@ export const ledgerMethods = [
   "applyRules",
   "monthSummary",
   "setBudget",
+  "exportCsv",
+  "undo",
 ] as const satisfies readonly (keyof LedgerApi)[];
 
-export const platformMethods = ["platformInfo", "chooseImportFile"] as const satisfies readonly (keyof PlatformApi)[];
+export const platformMethods = ["platformInfo", "chooseImportFile", "saveExportFile"] as const satisfies readonly (keyof PlatformApi)[];
 
 export type LedgerMethod = (typeof ledgerMethods)[number];
 export type PlatformMethod = (typeof platformMethods)[number];

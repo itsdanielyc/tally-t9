@@ -7,7 +7,7 @@ import { decodeCsvBytes } from "../../core/csv";
 import { createLedgerService, memoryStore, PREVIEW_ROWS, type LedgerStore } from "../../core/service";
 
 const usText = decodeCsvBytes(readFileSync("tests/fixtures/csv/us-comma.csv"));
-const us: ImportMapping = { delimiter: ",", hasHeader: true, date: 0, payee: 1, amount: { kind: "signed", column: 2 }, dateOrder: "MDY", decimal: "." };
+const us: ImportMapping = { delimiter: ",", hasHeader: true, date: 0, payee: 1, amount: { kind: "signed", column: 2 }, dateOrder: "MDY", decimal: ".", category: null, note: null };
 
 describe("import through the service", () => {
   it("inspects a file and refuses one with no rows", () => {
@@ -26,7 +26,7 @@ describe("import through the service", () => {
     expect(p.value.accepted).toBe(6);
     expect(p.value.duplicates).toBe(0);
     expect(p.value.rejected.map((r) => r.line)).toEqual([7, 8, 9]);
-    expect(p.value.rows[0]).toEqual({ line: 2, date: "2026-03-01", payee: "Landlord, Inc.", amount: -95000, status: "new", categoryId: null });
+    expect(p.value.rows[0]).toEqual({ line: 2, date: "2026-03-01", payee: "Landlord, Inc.", amount: -95000, status: "new", categoryId: null, category: "", note: "" });
     expect(p.value.rows.length).toBeLessThanOrEqual(PREVIEW_ROWS);
     // Previewing saves nothing.
     expect(s.listTransactions()).toEqual([]);

@@ -15,14 +15,14 @@ import { categoryFor } from "./categories.ts";
 import { parseCsv, detectDelimiter, type CsvRecord } from "./csv.ts";
 import { isValidParts, toIsoDate } from "./dates.ts";
 import { parseDecimal } from "./money.ts";
-import { cleanText, PAYEE_MAX } from "./transactions.ts";
+import { CATEGORY_NAME_MAX, cleanText, NOTE_MAX, PAYEE_MAX } from "./transactions.ts";
 
 /** Twenty megabytes of text is far beyond any bank export Tally expects. */
 export const MAX_IMPORT_CHARS = 20_000_000;
 
 const MONTHS = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
 
-export type ReadRow = { line: number; date: string; payee: string; amount: number };
+export type ReadRow = { line: number; date: string; payee: string; amount: number; category: string; note: string };
 
 // ---- dates ----
 
@@ -64,6 +64,8 @@ const HINTS = {
   amount: /amount|betrag|montant|importe|sum|value|total/i,
   debit: /debit|withdraw|paid ?out|money ?out|outflow|soll|spent|charge/i,
   credit: /credit|deposit|paid ?in|money ?in|inflow|haben|received/i,
+  category: /^categor|kategor|catégor/i,
+  note: /note|comment|notiz|remark|memo/i,
 };
 
 function looksLikeAmount(v: string): boolean {
@@ -155,6 +157,8 @@ export function inspect(text: string, options: { delimiter?: Delimiter; hasHeade
     return avg * (1 - share(i, looksLikeAmount)) * (1 - share(i, looksLikeDate));
   };
   const payeeCol = byHint(HINTS.payee, used) ?? best(textScore, used);
+  const categoryCol = byHint(HINTS.category, [...used, payeeCol]) ?? null;
+  const noteCol = byHint(HINTS.note, [...used, payeeCol, ...(categoryCol === null ? [] : [categoryCol])]) ?? null;
   const amountValues =
     amount.kind === "signed" ? values(amount.column) : [...values(amount.debit), ...values(amount.credit)];
   const decimal = detectDecimal(amountValues, delimiter);
@@ -164,7 +168,7 @@ export function inspect(text: string, options: { delimiter?: Delimiter; hasHeade
     hasHeader,
     columns,
     rowCount: data.length,
-    suggested: { delimiter, hasHeader, date: dateCol, payee: payeeCol, amount, dateOrder, decimal },
+    suggested: { delimiter, hasHeader, date: dateCol, payee: payeeCol, amount, dateOrder, decimal, category: categoryCol, note: noteCol },
   };
 }
 
@@ -184,6 +188,12 @@ export function mappingProblem(mapping: ImportMapping, width: number): string | 
   }
   const seen = new Set(cols.map(([, c]) => c));
   if (seen.size !== cols.length) return "Each of date, payee and amount needs its own column.";
+  for (const [name, col] of [["category", mapping.category], ["note", mapping.note]] as const) {
+    if (col === undefined || col === null) continue;
+    if (!Number.isInteger(col) || col < 0 || col >= Math.max(width, 1)) return `Choose a column for the ${name}, or none.`;
+    if (seen.has(col)) return `The ${name} needs its own column.`;
+    seen.add(col);
+  }
   if (!["YMD", "DMY", "MDY"].includes(mapping.dateOrder)) return "Choose the date order.";
   if (mapping.decimal !== "." && mapping.decimal !== ",") return "Choose the decimal separator.";
   return null;
@@ -227,14 +237,25 @@ export function readRow(record: CsvRecord, mapping: ImportMapping): { ok: true; 
     amount = d !== 0 ? -d : c;
   }
   if (amount === 0) return fail("amount is zero");
-  return { ok: true, row: { line: record.line, date: date.date, payee, amount } };
+  const category = optionalCell(f, mapping.category);
+  if (category.length > CATEGORY_NAME_MAX) return fail(`category is longer than ${CATEGORY_NAME_MAX} characters`);
+  const note = optionalCell(f, mapping.note, false);
+  if (note.length > NOTE_MAX) return fail(`note is longer than ${NOTE_MAX} characters`);
+  return { ok: true, row: { line: record.line, date: date.date, payee, amount, category, note } };
+}
+
+function optionalCell(fields: string[], col: number | null | undefined, collapse = true): string {
+  if (col === undefined || col === null) return "";
+  const raw = fields[col] ?? "";
+  return collapse ? cleanText(raw) : raw.trim();
 }
 
 function orderLabel(order: DateOrder): string {
   return order === "YMD" ? "year-month-day" : order === "DMY" ? "day-month-year" : "month-day-year";
 }
 
-export type ReadResult = { rows: (ReadRow & { duplicate: boolean; categoryId: string | null })[]; rejected: ImportRejection[] };
+/** `ruleCategoryId` is the rule's category when the row has no category of its own. */
+export type ReadResult = { rows: (ReadRow & { duplicate: boolean; ruleCategoryId: string | null })[]; rejected: ImportRejection[] };
 
 /**
  * Reads every data row and marks duplicates: a row identical in date,
@@ -262,7 +283,7 @@ export function readAll(text: string, mapping: ImportMapping, existing: readonly
     const k = duplicateKey(r.row.date, r.row.amount, r.row.payee);
     const left = available.get(k) ?? 0;
     if (left > 0) available.set(k, left - 1);
-    rows.push({ ...r.row, duplicate: left > 0, categoryId: categoryFor(r.row.payee, rules) });
+    rows.push({ ...r.row, duplicate: left > 0, ruleCategoryId: r.row.category ? null : categoryFor(r.row.payee, rules) });
   }
   return { rows, rejected };
 }

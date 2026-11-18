@@ -87,6 +87,19 @@ export function createFileStore(dir: string, fs: Fs = nodeFs, now: () => Date = 
   };
 }
 
+/** Writes a text file the same crash-safe way as the ledger: temp file, fsync, rename. */
+export function writeTextAtomic(path: string, text: string, fs: Fs = nodeFs): void {
+  const tmp = `${path}.tmp`;
+  const fd = fs.openSync(tmp, "w");
+  try {
+    fs.writeSync(fd, text);
+    fs.fsyncSync(fd);
+  } finally {
+    fs.closeSync(fd);
+  }
+  retry(() => fs.renameSync(tmp, path));
+}
+
 /** Windows can refuse a rename or copy for a moment while another process (an indexer, antivirus) has the file open. */
 function retry(op: () => void, attempts = 6): void {
   for (let i = 1; ; i++) {

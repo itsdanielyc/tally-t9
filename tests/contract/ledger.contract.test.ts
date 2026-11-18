@@ -39,6 +39,13 @@ async function state(api: LedgerApi) {
   return { ledger, transactions: await api.listTransactions() };
 }
 
+/** What is saved in the file: everything but the in-memory undo. */
+async function saved(api: LedgerApi) {
+  const { ledger, transactions } = await state(api);
+  const { undo: _undo, ...rest } = ledger;
+  return { ledger: rest, transactions };
+}
+
 async function run(api: LedgerApi, calls: Call[], afterEach?: () => Promise<void>): Promise<unknown[]> {
   const transcript: unknown[] = [];
   for (const [method, ...args] of calls) {
@@ -63,7 +70,7 @@ describe("contract: mock and real backend agree", () => {
       const mockTranscript = await run(mock, scenario.calls);
       const realTranscript = await run(real.api, scenario.calls, async () => {
         // What the real backend answered must be what it saved.
-        expect(await state(real.reopen())).toEqual(await state(real.api));
+        expect(await saved(real.reopen())).toEqual(await saved(real.api));
       });
       expect(realTranscript).toEqual(mockTranscript);
       expect(await state(real.api)).toEqual(await state(mock));

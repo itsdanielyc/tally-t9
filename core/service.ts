@@ -15,9 +15,10 @@ import type {
 } from "../contracts/ledger.ts";
 import { CURRENCIES } from "../contracts/ledger.ts";
 import { categoryFor, checkCategoryName, checkRuleText } from "./categories.ts";
+import { exportOf, applyFilter } from "./find.ts";
 import { DELIMITERS } from "./csv.ts";
 import { inspect, MAX_IMPORT_CHARS, mappingProblem, readAll, widthOf } from "./importer.ts";
-import { isValidMonth } from "./dates.ts";
+import { isValidMonth, localToday } from "./dates.ts";
 import { isValidMinor } from "./money.ts";
 import { emptyLedger, type LedgerData } from "./schema.ts";
 import { summarise } from "./summary.ts";
@@ -54,10 +55,15 @@ export function memoryStore(initial: LedgerData = emptyLedger()): LedgerStore & 
   };
 }
 
-export function createLedgerService(store: LedgerStore): LedgerService {
+export type ServiceOptions = { today?: () => string };
+
+export function createLedgerService(store: LedgerStore, options: ServiceOptions = {}): LedgerService {
+  const today = options.today ?? (() => localToday());
   const opened = store.load();
   let data: LedgerData = opened.data;
   const recovered = opened.recovered;
+  /** The state before the most recent delete, merge or import; any other change clears it. */
+  let undoSlot: { data: LedgerData; label: string } | null = null;
 
   const ok = <T>(value: T): Result<T> => ({ ok: true, value });
   const err = (code: LedgerError["code"], message: string, field?: string): Result<never> => ({
@@ -65,13 +71,18 @@ export function createLedgerService(store: LedgerStore): LedgerService {
     error: field ? { code, message, field } : { code, message },
   });
 
-  /** Saves `next` and makes it current, or leaves everything as it was. */
-  function commit<T>(next: LedgerData, value: T): Result<T> {
+  /**
+   * Saves `next` and makes it current, or leaves everything as it was.
+   * With an undo label the previous state becomes what undo() restores;
+   * without one, a change clears the undo.
+   */
+  function commit<T>(next: LedgerData, value: T, undoLabel?: string): Result<T> {
     try {
       store.save(next);
     } catch (e) {
       return err("io", `The ledger could not be saved: ${(e as Error).message}`);
     }
+    undoSlot = undoLabel ? { data, label: undoLabel } : null;
     data = next;
     return ok(value);
   }
@@ -125,13 +136,14 @@ export function createLedgerService(store: LedgerStore): LedgerService {
         categories: [...data.categories].sort((a, b) => a.name.localeCompare(b.name, "en", { sensitivity: "base" })),
         rules: structuredClone(data.rules),
         budgets: { ...data.budgets },
+        undo: undoSlot ? { label: undoSlot.label } : null,
         transactionCount: data.transactions.length,
         storage: { ...store.describe(), recovered },
       };
     },
 
-    listTransactions() {
-      return structuredClone(newestFirst(data.transactions));
+    listTransactions(filter) {
+      return structuredClone(newestFirst(applyFilter(data.transactions, filter)));
     },
 
     addTransaction(draft) {
@@ -158,8 +170,8 @@ export function createLedgerService(store: LedgerStore): LedgerService {
       const index = data.transactions.findIndex((t) => t.id === String(id));
       if (index < 0) return err("not_found", "That transaction no longer exists.");
       const next = copy();
-      next.transactions.splice(index, 1);
-      return commit(next, null);
+      const [removed] = next.transactions.splice(index, 1);
+      return commit(next, null, `Deleted ${removed.payee}`);
     },
 
     inspectImport(text, options = {}) {
@@ -178,14 +190,12 @@ export function createLedgerService(store: LedgerStore): LedgerService {
       if (!read.ok) return read;
       const { rows, rejected } = read.value;
       return ok({
-        rows: rows.slice(0, PREVIEW_ROWS).map(({ line, date, payee, amount, duplicate, categoryId }) => ({
-          line,
-          date,
-          payee,
-          amount,
-          status: duplicate ? ("duplicate" as const) : ("new" as const),
-          categoryId,
-        })),
+        rows: rows.slice(0, PREVIEW_ROWS).map(({ line, date, payee, amount, duplicate, ruleCategoryId, category, note }) => {
+          const existing = category ? data.categories.find((c) => c.name.toLocaleLowerCase() === category.toLocaleLowerCase()) : undefined;
+          const categoryId = category ? (existing?.id ?? null) : ruleCategoryId;
+          const name = category ? (existing?.name ?? category) : ruleCategoryId ? (data.categories.find((c) => c.id === ruleCategoryId)?.name ?? "") : "";
+          return { line, date, payee, amount, status: duplicate ? ("duplicate" as const) : ("new" as const), categoryId, category: name, note };
+        }),
         accepted: rows.filter((r) => !r.duplicate).length,
         duplicates: rows.filter((r) => r.duplicate).length,
         rejected,
@@ -199,11 +209,15 @@ export function createLedgerService(store: LedgerStore): LedgerService {
       const fresh = rows.filter((r) => !r.duplicate);
       const next = copy();
       for (const r of fresh) {
-        next.transactions.push({ id: newId(next, "t"), date: r.date, payee: r.payee, amount: r.amount, categoryId: r.categoryId, note: "" });
+        const id = newId(next, "t");
+        const categoryId = r.category ? resolveCategory(next, r.category) : r.ruleCategoryId;
+        next.transactions.push({ id, date: r.date, payee: r.payee, amount: r.amount, categoryId, note: r.note });
       }
       const outcome = { imported: fresh.length, duplicates: rows.length - fresh.length, rejected };
       // Nothing to add: nothing to save.
-      return fresh.length === 0 ? ok(outcome) : commit(next, outcome);
+      return fresh.length === 0
+        ? ok(outcome)
+        : commit(next, outcome, `Imported ${fresh.length} transaction${fresh.length === 1 ? "" : "s"}`);
     },
 
     createCategory(name) {
@@ -259,7 +273,7 @@ export function createLedgerService(store: LedgerStore): LedgerService {
       next.categories = next.categories.filter((c) => c.id !== source.id);
       // The target keeps its own budget; the source's goes with it.
       delete next.budgets[source.id];
-      return commit(next, { moved });
+      return commit(next, { moved }, `Merged ${source.name} into ${target.name}`);
     },
 
     createRule(contains, categoryId) {
@@ -313,6 +327,16 @@ export function createLedgerService(store: LedgerStore): LedgerService {
       if (amount === null || amount === 0) delete next.budgets[category.id];
       else next.budgets[category.id] = amount;
       return commit(next, { categoryId: category.id, amount: next.budgets[category.id] ?? null });
+    },
+
+    exportCsv(filter) {
+      return ok(exportOf(newestFirst(applyFilter(data.transactions, filter)), data.categories, today()));
+    },
+
+    undo() {
+      if (!undoSlot) return err("invalid", "There is nothing to undo.");
+      const { data: before, label } = undoSlot;
+      return commit(structuredClone(before), { undone: label });
     },
 
     setCurrency(currency) {

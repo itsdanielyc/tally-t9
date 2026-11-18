@@ -46,7 +46,7 @@ function bankExport(rows: number, seed = 2000): { text: string; badLines: number
   return { text: lines.join("\r\n") + "\r\n", badLines };
 }
 
-const mapping: ImportMapping = { delimiter: ";", hasHeader: true, date: 0, payee: 1, amount: { kind: "signed", column: 2 }, dateOrder: "DMY", decimal: "," };
+const mapping: ImportMapping = { delimiter: ";", hasHeader: true, date: 0, payee: 1, amount: { kind: "signed", column: 2 }, dateOrder: "DMY", decimal: ",", category: null, note: null };
 
 describe("import against the file store", () => {
   it("imports a 2,000-row bank CSV in under five seconds and lists every rejected row", () => {

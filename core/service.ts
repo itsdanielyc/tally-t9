@@ -3,12 +3,26 @@
 // code over a memory store. A change is computed on a copy and becomes the
 // current state only after the store has saved it, so a failed save leaves
 // the ledger exactly as it was.
-import type { Category, LedgerApi, LedgerError, Result, Settings, StorageInfo, Transaction } from "../contracts/ledger.ts";
+import type {
+  Category,
+  ImportMapping,
+  LedgerApi,
+  LedgerError,
+  Result,
+  Settings,
+  StorageInfo,
+  Transaction,
+} from "../contracts/ledger.ts";
 import { CURRENCIES } from "../contracts/ledger.ts";
+import { DELIMITERS } from "./csv.ts";
+import { inspect, MAX_IMPORT_CHARS, mappingProblem, readAll, widthOf } from "./importer.ts";
 import { emptyLedger, type LedgerData } from "./schema.ts";
 import { cleanText, newestFirst, validateDraft, type CleanDraft } from "./transactions.ts";
 
 export type LoadResult = { data: LedgerData; recovered: string | null };
+
+/** How many rows the import preview shows. */
+export const PREVIEW_ROWS = 10;
 
 export interface LedgerStore {
   load(): LoadResult;
@@ -83,6 +97,23 @@ export function createLedgerService(store: LedgerStore): LedgerService {
     return { id, date: d.date, payee: d.payee, amount: d.amount, categoryId: resolveCategory(next, d.category), note: d.note };
   }
 
+  function checkText(text: unknown): Result<string> {
+    if (typeof text !== "string") return err("invalid", "The file could not be read as text.");
+    if (text.length > MAX_IMPORT_CHARS) return err("invalid", "The file is too large to import (over 20 MB).");
+    return ok(text);
+  }
+
+  function readImport(text: unknown, mapping: ImportMapping): Result<ReturnType<typeof readAll>> {
+    const t = checkText(text);
+    if (!t.ok) return t;
+    if (typeof mapping !== "object" || mapping === null || !DELIMITERS.includes(mapping.delimiter)) {
+      return err("invalid", "Choose a delimiter.", "delimiter");
+    }
+    const problem = mappingProblem(mapping, widthOf(t.value, mapping.delimiter));
+    if (problem) return err("invalid", problem, "mapping");
+    return ok(readAll(t.value, mapping, data.transactions));
+  }
+
   return {
     getLedger() {
       return {
@@ -123,6 +154,49 @@ export function createLedgerService(store: LedgerStore): LedgerService {
       const next = copy();
       next.transactions.splice(index, 1);
       return commit(next, null);
+    },
+
+    inspectImport(text, options = {}) {
+      const t = checkText(text);
+      if (!t.ok) return t;
+      const delimiter = options?.delimiter;
+      if (delimiter !== undefined && !DELIMITERS.includes(delimiter)) return err("invalid", "Choose a delimiter.", "delimiter");
+      const hasHeader = typeof options?.hasHeader === "boolean" ? options.hasHeader : undefined;
+      const inspection = inspect(t.value, { delimiter, hasHeader });
+      if (inspection.rowCount === 0) return err("invalid", "The file has no rows to import.");
+      return ok(inspection);
+    },
+
+    previewImport(text, mapping) {
+      const read = readImport(text, mapping);
+      if (!read.ok) return read;
+      const { rows, rejected } = read.value;
+      return ok({
+        rows: rows.slice(0, PREVIEW_ROWS).map(({ line, date, payee, amount, duplicate }) => ({
+          line,
+          date,
+          payee,
+          amount,
+          status: duplicate ? ("duplicate" as const) : ("new" as const),
+        })),
+        accepted: rows.filter((r) => !r.duplicate).length,
+        duplicates: rows.filter((r) => r.duplicate).length,
+        rejected,
+      });
+    },
+
+    commitImport(text, mapping) {
+      const read = readImport(text, mapping);
+      if (!read.ok) return read;
+      const { rows, rejected } = read.value;
+      const fresh = rows.filter((r) => !r.duplicate);
+      const next = copy();
+      for (const r of fresh) {
+        next.transactions.push({ id: newId(next, "t"), date: r.date, payee: r.payee, amount: r.amount, categoryId: null, note: "" });
+      }
+      const outcome = { imported: fresh.length, duplicates: rows.length - fresh.length, rejected };
+      // Nothing to add: nothing to save.
+      return fresh.length === 0 ? ok(outcome) : commit(next, outcome);
     },
 
     setCurrency(currency) {

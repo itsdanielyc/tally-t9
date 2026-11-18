@@ -2,3 +2,6 @@
 *.png binary
 *.ico binary
 *.icns binary
+
+# Bank CSV fixtures keep their exact bytes (CRLF, BOM, Windows-1252).
+tests/fixtures/csv/*.csv -text

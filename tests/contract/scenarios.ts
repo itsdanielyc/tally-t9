@@ -1,8 +1,15 @@
 // Call sequences the contract suite plays against both backends. Each call
 // is [method, ...args]; the transcripts of results must be equal.
-import type { LedgerApi } from "../../contracts/ledger";
+import { readFileSync } from "node:fs";
+import type { ImportMapping, LedgerApi } from "../../contracts/ledger";
+import { decodeCsvBytes } from "../../core/csv";
 
 export type Call = { [K in keyof LedgerApi]: [K, ...Parameters<LedgerApi[K]>] }[keyof LedgerApi];
+
+const usCsv = decodeCsvBytes(readFileSync("tests/fixtures/csv/us-comma.csv"));
+const deCsv = decodeCsvBytes(readFileSync("tests/fixtures/csv/de-semicolon.csv"));
+const us: ImportMapping = { delimiter: ",", hasHeader: true, date: 0, payee: 1, amount: { kind: "signed", column: 2 }, dateOrder: "MDY", decimal: "." };
+const de: ImportMapping = { delimiter: ";", hasHeader: true, date: 0, payee: 1, amount: { kind: "signed", column: 3 }, dateOrder: "DMY", decimal: "," };
 
 const shop = { date: "2026-03-14", payee: "Corner Shop", amount: -1250, category: "Groceries", note: "" };
 
@@ -44,6 +51,23 @@ export const scenarios: { name: string; calls: Call[] }[] = [
       ["setCurrency", "GBP"],
       ["getLedger"],
       ["listTransactions"],
+    ],
+  },
+  {
+    name: "import a bank CSV: inspect, preview, commit, repeat",
+    calls: [
+      ["inspectImport", usCsv],
+      ["inspectImport", deCsv],
+      ["inspectImport", usCsv, { delimiter: ";", hasHeader: false }],
+      ["inspectImport", "Date,Payee\n"],
+      ["addTransaction", { date: "2026-03-09", payee: "Corner Shop", amount: -1250, category: "", note: "typed in" }],
+      ["previewImport", usCsv, us],
+      ["previewImport", usCsv, { ...us, amount: { kind: "signed", column: 9 } }],
+      ["commitImport", usCsv, us],
+      ["commitImport", usCsv, us],
+      ["commitImport", deCsv, de],
+      ["listTransactions"],
+      ["getLedger"],
     ],
   },
 ];

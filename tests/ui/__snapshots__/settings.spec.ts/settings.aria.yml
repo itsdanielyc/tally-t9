@@ -1,0 +1,33 @@
+- banner:
+  - text: Tally
+  - navigation "Sections":
+    - button "Transactions"
+    - button "Settings"
+- main:
+  - heading "Settings" [level=1]
+  - region "Currency":
+    - heading "Currency" [level=2]
+    - text: Currency for every amount
+    - combobox "Currency for every amount":
+      - option "USD" [selected]
+      - option "EUR"
+      - option "GBP"
+      - option "CAD"
+      - option "AUD"
+      - option "NZD"
+      - option "CHF"
+      - option "SEK"
+      - option "NOK"
+      - option "DKK"
+      - option "PLN"
+      - option "INR"
+    - paragraph: Amounts are kept in whole cents. Changing the currency relabels every amount; it never converts them.
+    - status
+  - region "Ledger file":
+    - heading "Ledger file" [level=2]
+    - paragraph: "In-memory mock ledger: nothing is saved to disk."
+    - paragraph: Everything Tally records stays in this one file on this computer.
+- contentinfo:
+  - text: "backend:"
+  - strong: mock
+  - text: "platform: mock / mock"

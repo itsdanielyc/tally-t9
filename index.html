@@ -13,33 +13,18 @@
   </head>
 
   <body>
-    <main class="container" data-geo="main">
-      <h1 data-geo="title">Welcome to Electron</h1>
-
-      <div class="row" data-geo="logos">
-        <a href="https://vite.dev" target="_blank">
-          <img src="/src/assets/vite.svg" class="logo vite" alt="Vite logo" />
-        </a>
-        <a href="https://www.electronjs.org" target="_blank">
-          <img src="/src/assets/electron.svg" class="logo electron" alt="Electron logo" />
-        </a>
-        <a href="https://www.typescriptlang.org/docs" target="_blank">
-          <img src="/src/assets/typescript.svg" class="logo typescript" alt="typescript logo" />
-        </a>
-      </div>
-      <p>Click on the Electron logo to learn more about the framework</p>
-
-      <form class="row" id="greet-form" data-geo="form" aria-label="Greet">
-        <input id="greet-input" placeholder="Enter a name..." aria-label="Name" />
-        <button type="submit">Greet</button>
-        <button type="button" id="clear-btn">Clear</button>
-      </form>
-      <p id="greet-msg" data-geo="message" aria-live="polite"></p>
-
-      <footer class="meta" data-geo="meta">
-        <span>backend: <strong id="backend-badge" data-testid="backend-badge">…</strong></span>
-        <span>platform: <span id="platform" data-testid="platform">…</span></span>
-      </footer>
-    </main>
+    <header class="topbar" data-geo="topbar">
+      <span class="brand">Tally</span>
+      <nav aria-label="Sections">
+        <button type="button" data-screen="transactions" aria-current="page">Transactions</button>
+        <button type="button" data-screen="settings">Settings</button>
+      </nav>
+    </header>
+    <p id="notice" class="notice" role="alert" hidden></p>
+    <main id="screen" class="screen" data-geo="screen"></main>
+    <footer class="meta" data-geo="meta">
+      <span>backend: <strong id="backend-badge" data-testid="backend-badge">…</strong></span>
+      <span>platform: <span id="platform" data-testid="platform">…</span></span>
+    </footer>
   </body>
 </html>

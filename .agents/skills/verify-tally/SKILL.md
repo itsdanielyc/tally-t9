@@ -18,6 +18,11 @@ Read cold, mid-task. Every command below is real for this repository.
   in a browser: `npm run dev:web` (Vite on port 1420).
 - Ready means: the main window titled "Tally" is visible and the backend
   badge reads "native".
+- The ledger: `ledger.json` (plus `ledger.json.bak`) in Electron's userData
+  directory (`%APPDATA%	ally`, `~/Library/Application Support/tally`,
+  `~/.config/tally`). For any manual or scripted run, point an unpackaged
+  build at a scratch directory with `TALLY_DATA_DIR=<dir>` so the real
+  ledger is never touched; Settings shows the path in use.
 
 ## Doctor (read-only)
 
@@ -29,9 +34,13 @@ Read cold, mid-task. Every command below is real for this repository.
 
 ## Drive
 
-- Real shell: `npm run test:e2e` launches `out/` through Playwright and
-  checks the badge, the greeting round trip and the console; add journeys
-  under `tests/e2e/`.
+- Real shell: `npm run test:e2e` launches `out/` through Playwright with
+  `TALLY_DATA_DIR` set to a temp directory, records, edits and deletes
+  transactions through the UI, relaunches the app and checks the list and
+  the file on disk; add journeys under `tests/e2e/`.
+- The bridge directly, from a Playwright `win.evaluate`:
+  `window.electronBridge.listTransactions()`; the method list is
+  `contracts/methods.ts`.
 - Browser against the mock: `npm run test:ui` (chromium); the badge must
   read "mock".
 - Stable handles: `data-testid` attributes and ARIA roles, never pixels.
@@ -45,6 +54,7 @@ Read cold, mid-task. Every command below is real for this repository.
 
 ## Cleanup
 
+- Delete the scratch `TALLY_DATA_DIR` you created; never the userData one.
 - Kill only what you started (the suite does this; after a manual launch,
   close the window or kill the one PID you recorded).
 - Evidence (`artifacts/`) survives cleanup and is gitignored.

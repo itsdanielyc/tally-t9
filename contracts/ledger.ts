@@ -53,8 +53,41 @@ export type LedgerView = {
   categories: Category[];
   /** in the order they were created, which is the order they are tried */
   rules: Rule[];
+  /** monthly budget per category id, in minor units (positive) */
+  budgets: Record<string, number>;
   transactionCount: number;
   storage: StorageInfo;
+};
+
+// ---- Monthly summary and budgets (slice 4) ----
+
+export type CategoryMonth = {
+  /** null is the "Uncategorised" row */
+  categoryId: string | null;
+  name: string;
+  /** sum of the positive amounts */
+  income: number;
+  /** sum of the negative amounts, as a positive number */
+  spending: number;
+  /** income minus spending: the sum of every amount in the category this month */
+  net: number;
+  /** the category's monthly budget, or null when it has none */
+  budget: number | null;
+  /** budget minus what was spent (spent = -net, so refunds reduce it); negative means over; null without a budget */
+  left: number | null;
+};
+
+export type MonthSummary = {
+  /** YYYY-MM */
+  month: string;
+  income: number;
+  spending: number;
+  /** income minus spending: the sum of every amount shown */
+  net: number;
+  /** every category with a transaction or a budget this month, by name, then Uncategorised */
+  categories: CategoryMonth[];
+  /** the month's transactions, newest first; the totals are their sums */
+  transactions: Transaction[];
 };
 
 export type ErrorCode = "invalid" | "not_found" | "conflict" | "io";
@@ -148,6 +181,9 @@ export interface LedgerApi {
   deleteRule(id: string): Promise<Result<null>>;
   /** Gives every uncategorised transaction the category of the first rule its payee matches. */
   applyRules(): Promise<Result<{ categorised: number }>>;
+  monthSummary(month: string): Promise<Result<MonthSummary>>;
+  /** A positive amount sets the category's monthly budget; null or 0 removes it. */
+  setBudget(categoryId: string, amount: number | null): Promise<Result<{ categoryId: string; amount: number | null }>>;
 }
 
 export type PlatformInfo = {

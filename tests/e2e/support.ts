@@ -10,6 +10,7 @@ export class Tally {
   app!: ElectronApplication;
   win!: Page;
   readonly consoleErrors: string[] = [];
+  private running = false;
   readonly dataDir = mkdtempSync(join(tmpdir(), "tally-e2e-"));
 
   readonly env: Record<string, string>;
@@ -24,6 +25,7 @@ export class Tally {
       cwd: process.cwd(),
       env: { ...process.env, ...this.env, TALLY_DATA_DIR: this.dataDir },
     });
+    this.running = true;
     this.win = await this.app.firstWindow();
     this.win.on("console", (m) => {
       if (m.type() === "error") this.consoleErrors.push(m.text());
@@ -38,7 +40,8 @@ export class Tally {
   }
 
   async close(): Promise<void> {
-    if (!this.app) return;
+    if (!this.running) return;
+    this.running = false;
     const proc = this.app.process();
     const closed = proc.exitCode !== null ? Promise.resolve() : new Promise<void>((r) => proc.once("close", () => r()));
     await this.app.close();

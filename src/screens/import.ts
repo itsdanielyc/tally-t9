@@ -122,6 +122,7 @@ export const importScreen: Screen = async (root, ctx) => {
     }
     const m = mapping;
     const columns: [number, string][] = inspection.columns.map((c, i) => [i, c]);
+    const optional: [number, string][] = [[-1, "(none)"], ...columns];
     const amountKind = h(
       "div",
       { class: "field amount-kind", role: "radiogroup", "aria-labelledby": "import-amount-kind" },
@@ -185,6 +186,9 @@ export const importScreen: Screen = async (root, ctx) => {
         select("import-order", "Date order", ORDER_LABELS, m.dateOrder, (v) => void update({ dateOrder: v })),
         select("import-payee", "Payee column", columns, m.payee, (v) => void update({ payee: v })),
         select("import-decimal", "Decimal separator", DECIMAL_LABELS, m.decimal, (v) => void update({ decimal: v })),
+        select("import-category", "Category column (optional)", optional, m.category ?? -1, (v) => void update({ category: v < 0 ? null : v })),
+        select("import-note", "Note column (optional)", optional, m.note ?? -1, (v) => void update({ note: v < 0 ? null : v })),
+        h("div", { class: "spacer" }),
         amountKind,
         ...amountFields,
       ),
@@ -213,6 +217,7 @@ export const importScreen: Screen = async (root, ctx) => {
             h("th", { scope: "col", class: "col-date" }, "Date"),
             h("th", { scope: "col" }, "Payee"),
             h("th", { scope: "col" }, "Category"),
+            m.note === null || m.note === undefined ? null : h("th", { scope: "col" }, "Note"),
             h("th", { scope: "col", class: "num" }, `Amount (${ctx.ledger.settings.currency})`),
             h("th", { scope: "col", class: "col-status" }, "Status"),
           ),
@@ -227,7 +232,8 @@ export const importScreen: Screen = async (root, ctx) => {
               h("td", { class: "col-line" }, r.line),
               h("td", { class: "col-date" }, r.date),
               h("td", {}, r.payee),
-              h("td", {}, r.categoryId ? (ctx.ledger.categories.find((c) => c.id === r.categoryId)?.name ?? "") : ""),
+              h("td", {}, r.category),
+              m.note === null || m.note === undefined ? null : h("td", { class: "note" }, r.note),
               h("td", { class: `num ${r.amount < 0 ? "neg" : "pos"}` }, formatAmount(r.amount)),
               h("td", { class: "col-status" }, r.status === "new" ? "New" : "Duplicate, skipped"),
             ),

@@ -224,6 +224,26 @@ button[hidden] { display: none; }
 .bar .fill { height: 100%; background: var(--accent); }
 .bar.over .fill { background: var(--neg); }
 
+/* Find and export */
+.card.find { padding: 12px 16px; }
+.find-form { display: grid; grid-template-columns: 1fr 160px 140px 140px 100px 100px auto; gap: 8px; align-items: end; }
+.find-form select { width: 100%; }
+.find-form input { width: 100%; min-width: 0; }
+.list-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+.count { margin: 0; color: var(--muted); }
+.undo-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 12px 24px 0;
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #eef5f1;
+}
+.undo-bar[hidden] { display: none; }
+.undo-bar button { height: 26px; }
+
 .meta {
   display: flex;
   gap: 24px;

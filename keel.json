@@ -20,7 +20,7 @@
     "e2e": "npm run test:e2e",
     "build": "npm run build",
     "package": "npm run package",
-    "installers": null
+    "installers": "gh workflow run installers"
   },
   "paths": {
     "ui": "src/",

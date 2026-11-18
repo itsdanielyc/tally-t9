@@ -18,10 +18,11 @@ ledger of what has been proven and where.
 ## Commands
 
 - lint: `npm run typecheck` (tsc over the renderer, `electron/` and the suites)
-- unit: `npm run test:unit`; contract: `npm run test:contract`; integration: `npm run test:integration` (the last two from slice 1)
-- ui: `npm run test:ui` (Playwright, chromium, against the labelled mock; starts Vite itself)
+- unit: `npm run test:unit`; contract: `npm run test:contract`; integration: `npm run test:integration`
+- ui: `npm run test:ui` (Playwright, chromium, against the labelled mock; starts Vite itself; `TALLY_UI_PORT=<port>` when 1420 is taken)
 - e2e: `npm run test:e2e` (needs `npm run build` first)
-- installers: the `installers` workflow (main and on demand)
+- installers: the `installers` workflow (main and on demand: `gh workflow run installers`)
+- release: `CHANGELOG.md`, `docs/release-notes/<version>.md`, the tag-driven `release` workflow (gated on `installers`)
 - triage a CI run: `npm run triage [run-id]`
 - verify this app end to end: the `verify-tally` skill in `.agents/skills`
 
